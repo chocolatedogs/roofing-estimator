@@ -387,21 +387,13 @@ const SigPad = ({ onSave }) => {
   };
 
   const start = e => {
-    const r=ref.current.getBoundingClientRect();
-    const ctx=ref.current.getContext('2d');
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    ctx.beginPath(); ctx.moveTo(clientX-r.left, clientY-r.top);
-    setDrawing(true); e.preventDefault();
+    const r=ref.current.getBoundingClientRect(); const ctx=ref.current.getContext('2d');
+    const [x,y]=getPos(e,r); ctx.beginPath(); ctx.moveTo(x,y); setDrawing(true); e.preventDefault();
   };
   const move = e => {
     if(!drawing) return; e.preventDefault();
-    const r=ref.current.getBoundingClientRect();
-    const ctx=ref.current.getContext('2d');
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    ctx.lineTo(clientX-r.left, clientY-r.top);
-    ctx.stroke(); setHasSig(true);
+    const r=ref.current.getBoundingClientRect(); const ctx=ref.current.getContext('2d');
+    const [x,y]=getPos(e,r); ctx.lineTo(x,y); ctx.stroke(); setHasSig(true);
     onSave(ref.current.toDataURL());
   };
   const stop = () => setDrawing(false);
@@ -468,18 +460,48 @@ const Step5 = ({ data, upd, onFinish, company, contract }) => {
 };
 
 // ─── QUOTE DOCUMENT — INTERNAL ────────────────────────────────────────────────
+const PRINT_STYLE_INTERNAL = `
+  @media print {
+    @page { margin: 0.5in; }
+    body > * { display: none !important; }
+    #print-root { display: block !important; position: fixed; top:0; left:0; width:100%; }
+    #print-root * { display: revert; }
+    .no-print { display: none !important; }
+    button { display: none !important; }
+  }
+`;
+
+const PRINT_STYLE_CLIENT = `
+  @media print {
+    @page { margin: 0.5in; }
+    body > * { display: none !important; }
+    #print-root { display: block !important; position: fixed; top:0; left:0; width:100%; }
+    #print-root * { display: revert; }
+    .no-print { display: none !important; }
+    button { display: none !important; }
+  }
+`;
+
 const InternalQuote = ({ job, company, onBack }) => {
   const squares = Math.ceil(job.sqft/100);
   const matTotal = (job.pricePerSquare||0)*squares;
   const laborTotal = job.jobType==='repair' ? (job.laborAmount||0) : 0;
   const deposit = Math.round(job.finalTotal*0.5);
 
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = PRINT_STYLE_INTERNAL;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
   return (
     <div style={{padding:16,paddingBottom:80}}>
-      <button onClick={onBack} style={{background:'none',border:'none',color:'#007aff',fontSize:16,fontWeight:600,cursor:'pointer',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>
+      <style>{PRINT_STYLE_INTERNAL}</style>
+      <button className="no-print" onClick={onBack} style={{background:'none',border:'none',color:'#007aff',fontSize:16,fontWeight:600,cursor:'pointer',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>
         ← Back
       </button>
-      <div id="internal-doc" style={{background:'#fff',borderRadius:16,border:'1px solid #e5e5ea',padding:20,display:'flex',flexDirection:'column',gap:16}}>
+      <div id="print-root" style={{background:'#fff',borderRadius:16,border:'1px solid #e5e5ea',padding:20,display:'flex',flexDirection:'column',gap:16}}>
         {/* Header */}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',borderBottom:'2px solid #1e3a8a',paddingBottom:14}}>
           <img src={LOGO_B64} alt="Arch Roofing" style={{height:60,objectFit:'contain'}} />
@@ -572,7 +594,7 @@ const InternalQuote = ({ job, company, onBack }) => {
           <div style={{fontSize:11,color:'#6b7280',marginTop:4}}>Signed on {job.date}</div>
         </div>}
       </div>
-      <div style={{marginTop:16}}>
+      <div className="no-print" style={{marginTop:16}}>
         <Btn onClick={()=>window.print()} color='#1e3a8a'>🖨️ Print / Save PDF</Btn>
       </div>
     </div>
@@ -584,12 +606,20 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
   const deposit = Math.round(job.finalTotal*0.5);
   const boilerplate = job.jobType==='replacement' ? REPLACEMENT_BOILERPLATE : REPAIR_BOILERPLATE;
 
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = PRINT_STYLE_CLIENT;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
   return (
     <div style={{padding:16,paddingBottom:80}}>
-      <button onClick={onBack} style={{background:'none',border:'none',color:'#007aff',fontSize:16,fontWeight:600,cursor:'pointer',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>
+      <style>{PRINT_STYLE_CLIENT}</style>
+      <button className="no-print" onClick={onBack} style={{background:'none',border:'none',color:'#007aff',fontSize:16,fontWeight:600,cursor:'pointer',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>
         ← Back
       </button>
-      <div style={{background:'#fff',borderRadius:16,border:'1px solid #e5e5ea',padding:20,display:'flex',flexDirection:'column',gap:16}}>
+      <div id="print-root" style={{background:'#fff',borderRadius:16,border:'1px solid #e5e5ea',padding:20,display:'flex',flexDirection:'column',gap:16}}>
         {/* Header */}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',borderBottom:'2px solid #0f766e',paddingBottom:14}}>
           <img src={LOGO_B64} alt="Arch Roofing" style={{height:60,objectFit:'contain'}} />
@@ -664,7 +694,7 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
           </>}
         </div>
       </div>
-      <div style={{marginTop:16}}>
+      <div className="no-print" style={{marginTop:16}}>
         <Btn onClick={()=>window.print()} color='#0f766e'>🖨️ Print / Save PDF</Btn>
       </div>
     </div>
