@@ -595,7 +595,19 @@ const InternalQuote = ({ job, company, onBack }) => {
         </div>}
       </div>
       <div className="no-print" style={{marginTop:16}}>
-        <Btn onClick={()=>window.print()} color='#1e3a8a'>🖨️ Print / Save PDF</Btn>
+        <Btn onClick={()=>{
+          const doc = document.getElementById('print-root').innerHTML;
+          const w = window.open('','_blank','width=800,height=900');
+          w.document.write(`<!DOCTYPE html><html><head><title>Internal Estimator Copy</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0.5in; color: #1c1c1e; }
+              img { max-width: 100%; }
+              * { box-sizing: border-box; }
+              @media print { @page { margin: 0.4in; } }
+            </style></head><body>${doc}</body></html>`);
+          w.document.close();
+          setTimeout(()=>w.print(), 500);
+        }} color='#1e3a8a'>🖨️ Print / Save PDF</Btn>
       </div>
     </div>
   );
@@ -695,7 +707,19 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
         </div>
       </div>
       <div className="no-print" style={{marginTop:16}}>
-        <Btn onClick={()=>window.print()} color='#0f766e'>🖨️ Print / Save PDF</Btn>
+        <Btn onClick={()=>{
+          const doc = document.getElementById('print-root').innerHTML;
+          const w = window.open('','_blank','width=800,height=900');
+          w.document.write(`<!DOCTYPE html><html><head><title>Client Quote - Arch Roofing</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0.5in; color: #1c1c1e; }
+              img { max-width: 100%; }
+              * { box-sizing: border-box; }
+              @media print { @page { margin: 0.4in; } }
+            </style></head><body>${doc}</body></html>`);
+          w.document.close();
+          setTimeout(()=>w.print(), 500);
+        }} color='#0f766e'>🖨️ Print / Save PDF</Btn>
       </div>
     </div>
   );
