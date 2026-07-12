@@ -646,32 +646,19 @@ const generatePDF = (sections, filename) => {
     }
   });
 
-  // On iOS use native share sheet with actual PDF file
-  // On desktop fall back to download
-  const pdfBlob = doc.output('blob');
-  const file = new File([pdfBlob], filename + '.pdf', { type: 'application/pdf' });
-
-  if(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    // iOS native share sheet - shares actual PDF file
-    navigator.share({
-      files: [file],
-      title: filename,
-    }).catch(err => {
-      if(err.name !== 'AbortError') {
-        // Fallback to download if share fails
-        const url = URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename + '.pdf';
-        a.click(); URL.revokeObjectURL(url);
-      }
-    });
-  } else {
-    // Desktop - trigger download
-    const url = URL.createObjectURL(pdfBlob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename + '.pdf';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
+  // Output as base64 data URI and open in new tab
+  // On iPhone: Safari opens the PDF natively, tap Share to text/email/airdrop
+  // On Mac: opens in new tab, Command+S to save or Command+P to print
+  const pdfDataUri = doc.output('datauristring');
+  const newTab = window.open();
+  if(newTab) {
+    newTab.document.write(
+      '<html><head><title>' + filename + '</title>' +
+      '<style>body{margin:0;padding:0;background:#000;}' +
+      'iframe{width:100vw;height:100vh;border:none;}</style></head>' +
+      '<body><iframe src="' + pdfDataUri + '"></iframe></body></html>'
+    );
+    newTab.document.close();
   }
 };
 
