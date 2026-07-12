@@ -627,7 +627,9 @@ const generatePDF = (sections, filename) => {
       y = rowY + (col>0 ? imgH+8 : 0) + 8;
     }
     else if (sec.type === 'acceptance') {
-      checkPage(50); y += 4;
+      // Need room for acceptance text + signature block (approx 160pt total)
+      if(y + 160 > pageH - margin){ doc.addPage(); y = margin; }
+      y += 4;
       doc.setDrawColor(15,118,110); doc.setLineWidth(1);
       doc.line(margin, y, pageW-margin, y); y += 12;
       doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
