@@ -515,30 +515,8 @@ const generatePDF = (sections, filename) => {
   const contentW = pageW - margin * 2;
   let y = margin;
 
-  const checkPage = (needed = 20) => {
+  const checkPage = (needed) => {
     if (y + needed > pageH - margin) { doc.addPage(); y = margin; }
-  };
-
-  const drawText = (text, x, size, style, color, maxW) => {
-    doc.setFontSize(size);
-    doc.setFont('helvetica', style || 'normal');
-    if (color) doc.setTextColor(...color);
-    else doc.setTextColor(28, 28, 30);
-    const lines = doc.splitTextToSize(String(text || ''), maxW || contentW);
-    checkPage(lines.length * (size * 1.4));
-    doc.text(lines, x, y);
-    y += lines.length * (size * 1.4);
-  };
-
-  const drawLine = (color = [229, 229, 234]) => {
-    doc.setDrawColor(...color);
-    doc.line(margin, y, pageW - margin, y);
-    y += 8;
-  };
-
-  const drawRect = (h, fillColor) => {
-    doc.setFillColor(...fillColor);
-    doc.rect(margin, y, contentW, h, 'F');
   };
 
   sections.forEach(sec => {
@@ -548,90 +526,120 @@ const generatePDF = (sections, filename) => {
         doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
         let ry = y + 8;
         [sec.name, sec.address, sec.phone, sec.email, 'Lic# ' + sec.license].forEach(line => {
-          doc.text(line, pageW - margin, ry, { align: 'right' });
-          ry += 13;
+          doc.text(line, pageW - margin, ry, { align: 'right' }); ry += 13;
         });
         y += 75;
-        drawLine([30, 58, 138]);
-        y += 6;
+        doc.setDrawColor(...(sec.lineColor||[30,58,138])); doc.setLineWidth(1.5);
+        doc.line(margin, y, pageW - margin, y); doc.setLineWidth(0.5); y += 10;
       } catch(e) { y += 10; }
     }
     else if (sec.type === 'badge') {
-      drawRect(28, sec.color || [30, 58, 138]);
+      checkPage(32);
+      doc.setFillColor(...(sec.color||[30,58,138]));
+      doc.rect(margin, y, contentW, 26, 'F');
       doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
-      doc.text(sec.left, margin + 8, y + 18);
-      doc.text(sec.right, pageW - margin - 8, y + 18, { align: 'right' });
-      y += 36;
+      doc.text(sec.left, margin+8, y+17);
+      if(sec.right) doc.text(sec.right, pageW-margin-8, y+17, {align:'right'});
+      y += 34;
     }
     else if (sec.type === 'sectionHeader') {
-      checkPage(30);
+      checkPage(22); y += 4;
       doc.setFontSize(9); doc.setFont('helvetica','bold');
-      doc.setTextColor(...(sec.color || [30, 58, 138]));
-      doc.text(sec.text.toUpperCase(), margin, y);
-      y += 16;
+      doc.setTextColor(...(sec.color||[30,58,138]));
+      doc.text(sec.text.toUpperCase(), margin, y); y += 14;
     }
     else if (sec.type === 'row2') {
-      checkPage(18);
+      checkPage(16);
       doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(107,114,128);
-      doc.text(sec.label, margin, y);
+      doc.text(String(sec.label||''), margin, y);
       doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
-      doc.text(String(sec.value || ''), margin + contentW * 0.45, y);
-      y += 16;
+      const val = doc.splitTextToSize(String(sec.value||''), contentW*0.5);
+      doc.text(val, margin+contentW*0.45, y);
+      y += Math.max(14, val.length*13);
     }
     else if (sec.type === 'totalRow') {
-      checkPage(24);
-      drawLine();
+      checkPage(28); y += 4;
+      doc.setDrawColor(209,213,219); doc.setLineWidth(1);
+      doc.line(margin, y, pageW-margin, y); y += 10;
       doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
       doc.text('TOTAL', margin, y);
-      doc.setTextColor(...(sec.color || [30, 58, 138]));
-      doc.text(sec.value, pageW - margin, y, { align: 'right' });
+      doc.setTextColor(...(sec.color||[30,58,138]));
+      doc.text(sec.value, pageW-margin, y, {align:'right'});
       y += 20;
     }
     else if (sec.type === 'priceBox') {
-      checkPage(80);
-      doc.setFillColor(240, 253, 250);
-      doc.roundedRect(margin, y, contentW, 70, 6, 6, 'F');
-      doc.setDrawColor(15, 118, 110); doc.setLineWidth(1.5);
-      doc.roundedRect(margin, y, contentW, 70, 6, 6, 'S');
-      doc.setLineWidth(0.5);
+      checkPage(90);
+      doc.setFillColor(240,253,250);
+      doc.roundedRect(margin, y, contentW, 78, 5, 5, 'F');
+      doc.setDrawColor(15,118,110); doc.setLineWidth(1.5);
+      doc.roundedRect(margin, y, contentW, 78, 5, 5, 'S'); doc.setLineWidth(0.5);
       doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
-      doc.text('Total Price', margin + 12, y + 22);
+      doc.text('Total Price', margin+12, y+22);
       doc.setFontSize(20); doc.setTextColor(15,118,110);
-      doc.text(sec.total, pageW - margin - 12, y + 22, { align: 'right' });
-      doc.setDrawColor(167, 243, 208);
-      doc.line(margin + 12, y + 32, pageW - margin - 12, y + 32);
+      doc.text(sec.total, pageW-margin-12, y+22, {align:'right'});
+      doc.setDrawColor(167,243,208); doc.line(margin+12, y+32, pageW-margin-12, y+32);
       doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(55,65,81);
-      doc.text('50% Deposit (due when contract signed)', margin + 12, y + 46);
-      doc.setFont('helvetica','bold');
-      doc.text(sec.deposit, pageW - margin - 12, y + 46, { align: 'right' });
-      doc.setFont('helvetica','normal');
-      doc.text('50% Balance (due at project completion)', margin + 12, y + 60);
-      doc.setFont('helvetica','bold');
-      doc.text(sec.deposit, pageW - margin - 12, y + 60, { align: 'right' });
-      y += 80;
+      doc.text('50% Deposit (due when contract signed)', margin+12, y+46);
+      doc.setFont('helvetica','bold'); doc.text(sec.deposit, pageW-margin-12, y+46, {align:'right'});
+      doc.setFont('helvetica','normal'); doc.text('50% Balance (due at project completion)', margin+12, y+62);
+      doc.setFont('helvetica','bold'); doc.text(sec.deposit, pageW-margin-12, y+62, {align:'right'});
+      y += 90;
     }
     else if (sec.type === 'text') {
-      checkPage(20);
-      drawText(sec.content, margin, sec.size || 10, sec.style || 'normal', sec.color, contentW);
-      y += 6;
+      const size = sec.size||10;
+      doc.setFontSize(size); doc.setFont('helvetica', sec.style||'normal');
+      doc.setTextColor(...(sec.color||[28,28,30]));
+      const lines = doc.splitTextToSize(String(sec.content||''), contentW);
+      const lh = size * 1.35;
+      lines.forEach(line => {
+        if(y + lh > pageH - margin){ doc.addPage(); y = margin; }
+        doc.text(line, margin, y); y += lh;
+      });
+      y += 4;
     }
-    else if (sec.type === 'spacer') {
-      y += sec.h || 12;
+    else if (sec.type === 'spacer') { y += sec.h||10; }
+    else if (sec.type === 'newpage') { doc.addPage(); y = margin; }
+    else if (sec.type === 'divider') {
+      y += 6; doc.setDrawColor(...(sec.color||[229,229,234]));
+      doc.setLineWidth(0.5); doc.line(margin, y, pageW-margin, y); y += 6;
+    }
+    else if (sec.type === 'photos') {
+      if(!sec.photos||sec.photos.length===0) return;
+      const cols = 3; const imgW = (contentW-16)/cols; const imgH = imgW*0.75;
+      let col = 0; let rowY = y;
+      sec.photos.forEach(photo => {
+        try {
+          if(rowY + imgH > pageH-margin){ doc.addPage(); rowY = margin; col = 0; }
+          doc.addImage(photo, 'JPEG', margin + col*(imgW+8), rowY, imgW, imgH);
+          col++; if(col>=cols){ col=0; rowY += imgH+8; }
+        } catch(e){}
+      });
+      y = rowY + (col>0 ? imgH+8 : 0) + 8;
+    }
+    else if (sec.type === 'acceptance') {
+      checkPage(50); y += 4;
+      doc.setDrawColor(15,118,110); doc.setLineWidth(1);
+      doc.line(margin, y, pageW-margin, y); y += 12;
+      doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
+      doc.text('Acceptance of Proposal', margin, y); y += 13;
+      doc.setFont('helvetica','normal'); doc.setTextColor(55,65,81);
+      const aLines = doc.splitTextToSize('The terms, specifications, and all terms and conditions have been read and are satisfactory and are hereby accepted. I (we) hereby authorize Arch Roofing & Repair, LLC to provide the services as specified above.', contentW);
+      aLines.forEach(line => {
+        if(y+12 > pageH-margin){ doc.addPage(); y=margin; }
+        doc.text(line, margin, y); y += 13;
+      });
+      y += 10;
     }
     else if (sec.type === 'signature') {
       checkPage(80);
-      doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(15,118,110);
+      doc.setFontSize(9); doc.setFont('helvetica','bold');
+      doc.setTextColor(...(sec.color||[15,118,110]));
       doc.text('CLIENT SIGNATURE', margin, y); y += 14;
       try {
-        doc.addImage(sec.src, 'PNG', margin, y, 200, 50);
-        y += 58;
-      } catch(e) { y += 20; }
+        doc.addImage(sec.src, 'PNG', margin, y, 180, 50); y += 58;
+      } catch(e){ y += 20; }
       doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(107,114,128);
-      doc.text('Signed: ' + sec.name + ' — ' + sec.date, margin, y);
-      y += 16;
-    }
-    else if (sec.type === 'divider') {
-      y += 6; drawLine(sec.color || [229,229,234]); 
+      doc.text('Signed: ' + sec.name + ' — ' + sec.date, margin, y); y += 16;
     }
   });
 
@@ -758,49 +766,48 @@ const InternalQuote = ({ job, company, onBack }) => {
           const deposit = Math.round(job.finalTotal*0.5);
           const roofLabel = ROOF_TYPES.find(t=>t.id===job.roofType)?.label||'—';
           const dmg = (job.damageIssues||[]).map(id=>DAMAGE_ISSUES.find(d=>d.id===id)?.label).filter(Boolean);
-          const fname = 'InternalCopy-' + job.clientName.replace(/ /g,'_') + '-' + job.date.replace(/\//g,'-');
+          const fname = 'InternalCopy-'+job.clientName.replace(/ /g,'_')+'-'+job.date.replace(/\//g,'-');
           generatePDF([
-            { type:'logo', src:LOGO_B64, name:company.name, address:company.address, phone:company.phone, email:company.email, license:company.license },
+            { type:'logo', src:LOGO_B64, name:company.name, address:company.address, phone:company.phone, email:company.email, license:company.license, lineColor:[30,58,138] },
             { type:'badge', left:'INTERNAL ESTIMATOR COPY', right:'Job #'+job.id+' · '+job.date, color:[30,58,138] },
-            { type:'spacer', h:10 },
             { type:'sectionHeader', text:'Client', color:[30,58,138] },
             { type:'row2', label:'Name:', value:job.clientName },
             { type:'row2', label:'Phone:', value:job.phone||'—' },
             { type:'row2', label:'Address:', value:job.address },
             { type:'row2', label:'Email:', value:job.clientEmail||'—' },
-            { type:'spacer', h:10 },
             { type:'sectionHeader', text:'Job Details', color:[30,58,138] },
             { type:'row2', label:'Job Type:', value:job.jobType==='replacement'?'Replacement':'Repair' },
             { type:'row2', label:'Roof System:', value:roofLabel },
             { type:'row2', label:'Square Footage:', value:job.sqft+' sqft' },
-            { type:'row2', label:'Squares:', value:squares },
-            { type:'row2', label:'Stories:', value:job.stories },
+            { type:'row2', label:'Squares:', value:String(squares) },
+            { type:'row2', label:'Stories:', value:String(job.stories) },
             { type:'row2', label:'Pitch:', value:job.pitch },
-            ...(job.ridgeFt>0 ? [{ type:'row2', label:'Ridge:', value:job.ridgeFt+' LF' }] : []),
-            ...(job.eavesFt>0 ? [{ type:'row2', label:'Eaves:', value:job.eavesFt+' LF' }] : []),
-            { type:'spacer', h:10 },
+            ...(job.ridgeFt>0?[{type:'row2',label:'Ridge:',value:job.ridgeFt+' LF'}]:[]),
+            ...(job.eavesFt>0?[{type:'row2',label:'Eaves:',value:job.eavesFt+' LF'}]:[]),
             { type:'sectionHeader', text:'Pricing Breakdown', color:[30,58,138] },
             { type:'row2', label:'Price Per Square:', value:fmt(job.pricePerSquare||0) },
             { type:'row2', label:'Number of Squares:', value:'× '+squares },
             { type:'row2', label:'Materials Total:', value:fmt(matTotal) },
-            ...(job.jobType==='repair' ? [{ type:'row2', label:'Labor:', value:fmt(laborTotal) }] : []),
+            ...(job.jobType==='repair'?[{type:'row2',label:'Labor:',value:fmt(laborTotal)}]:[]),
             { type:'totalRow', value:fmt(job.finalTotal), color:[30,58,138] },
             { type:'row2', label:'50% Deposit Due:', value:fmt(deposit) },
             { type:'row2', label:'Balance at Completion:', value:fmt(deposit) },
-            ...(dmg.length>0 ? [
-              { type:'spacer', h:10 },
-              { type:'sectionHeader', text:'Observed Issues', color:[30,58,138] },
-              ...dmg.map(d=>({ type:'text', content:'• '+d, size:10 }))
-            ] : []),
-            ...(job.notes ? [
-              { type:'spacer', h:10 },
-              { type:'sectionHeader', text:'Inspector Notes', color:[30,58,138] },
-              { type:'text', content:job.notes, size:10 }
-            ] : []),
-            ...(job.signature ? [
-              { type:'spacer', h:10 },
-              { type:'signature', src:job.signature, name:job.clientName, date:job.date }
-            ] : []),
+            ...(dmg.length>0?[
+              {type:'sectionHeader',text:'Observed Issues',color:[30,58,138]},
+              ...dmg.map(d=>({type:'text',content:'• '+d,size:10}))
+            ]:[]),
+            ...(job.notes?[
+              {type:'sectionHeader',text:'Inspector Notes',color:[30,58,138]},
+              {type:'text',content:job.notes,size:10}
+            ]:[]),
+            ...((job.photos||[]).length>0?[
+              {type:'sectionHeader',text:'Site Photos',color:[30,58,138]},
+              {type:'photos',photos:job.photos}
+            ]:[]),
+            ...(job.signature?[
+              {type:'sectionHeader',text:'Client Signature',color:[30,58,138]},
+              {type:'signature',src:job.signature,name:job.clientName,date:job.date,color:[30,58,138]}
+            ]:[]),
           ], fname);
         }} color='#1e3a8a'>📄 Generate PDF — My Copy</Btn>
       </div>
@@ -905,31 +912,32 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
         <Btn onClick={()=>{
           const deposit = Math.round(job.finalTotal*0.5);
           const boilerplate = job.jobType==='replacement' ? REPLACEMENT_BOILERPLATE : REPAIR_BOILERPLATE;
-          const fname = 'Quote-' + job.clientName.replace(/ /g,'_') + '-' + job.date.replace(/\//g,'-');
+          const fname = 'Quote-'+job.clientName.replace(/ /g,'_')+'-'+job.date.replace(/\//g,'-');
           generatePDF([
-            { type:'logo', src:LOGO_B64, name:company.name, address:company.address, phone:company.phone, email:company.email, license:company.license },
+            { type:'logo', src:LOGO_B64, name:company.name, address:company.address, phone:company.phone, email:company.email, license:company.license, lineColor:[15,118,110] },
             { type:'badge', left:'PROPOSAL / ESTIMATE', right:job.date, color:[15,118,110] },
-            { type:'spacer', h:10 },
             { type:'sectionHeader', text:'Prepared For', color:[15,118,110] },
             { type:'text', content:job.clientName, size:13, style:'bold' },
             { type:'text', content:job.address, size:10 },
-            ...(job.phone ? [{ type:'text', content:job.phone, size:10 }] : []),
-            ...(job.clientEmail ? [{ type:'text', content:job.clientEmail, size:10 }] : []),
-            { type:'spacer', h:10 },
+            ...(job.phone?[{type:'text',content:job.phone,size:10}]:[]),
+            ...(job.clientEmail?[{type:'text',content:job.clientEmail,size:10}]:[]),
+            { type:'spacer', h:8 },
             { type:'sectionHeader', text:'Scope of Work — '+(job.jobType==='replacement'?'Roof Replacement':'Roof Repair'), color:[15,118,110] },
             { type:'text', content:boilerplate, size:9 },
-            { type:'spacer', h:10 },
+            { type:'spacer', h:8 },
             { type:'priceBox', total:fmt(job.finalTotal), deposit:fmt(deposit) },
-            { type:'spacer', h:10 },
+            ...((job.photos||[]).length>0?[
+              {type:'sectionHeader',text:'Site Photos',color:[15,118,110]},
+              {type:'photos',photos:job.photos}
+            ]:[]),
+            { type:'newpage' },
             { type:'sectionHeader', text:'Terms & Conditions', color:[15,118,110] },
             { type:'text', content:contract, size:8, color:[55,65,81] },
-            { type:'spacer', h:10 },
-            { type:'divider', color:[15,118,110] },
-            { type:'text', content:'Acceptance of Proposal — The terms, specifications, and all terms and conditions have been read and are satisfactory and are hereby accepted. I (we) hereby authorize Arch Roofing & Repair, LLC to provide the services as specified above.', size:9 },
-            { type:'spacer', h:10 },
-            ...(job.signature ? [
-              { type:'signature', src:job.signature, name:job.clientName, date:job.date }
-            ] : []),
+            { type:'spacer', h:8 },
+            { type:'acceptance' },
+            ...(job.signature?[
+              {type:'signature',src:job.signature,name:job.clientName,date:job.date,color:[15,118,110]}
+            ]:[]),
           ], fname);
         }} color='#0f766e'>📄 Generate PDF — Client Copy</Btn>
       </div>
