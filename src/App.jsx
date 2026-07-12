@@ -498,7 +498,7 @@ const PRINT_STYLE_CLIENT = `
 
 
 // ─── PDF GENERATOR ────────────────────────────────────────────────────────────
-const generatePDF = (sections, filename) => {
+const generatePDF = async (sections, filename) => {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -646,19 +646,29 @@ const generatePDF = (sections, filename) => {
     }
   });
 
-  // Output as base64 data URI and open in new tab
-  // On iPhone: Safari opens the PDF natively, tap Share to text/email/airdrop
-  // On Mac: opens in new tab, Command+S to save or Command+P to print
-  const pdfDataUri = doc.output('datauristring');
-  const newTab = window.open();
-  if(newTab) {
-    newTab.document.write(
-      '<html><head><title>' + filename + '</title>' +
-      '<style>body{margin:0;padding:0;background:#000;}' +
-      'iframe{width:100vw;height:100vh;border:none;}</style></head>' +
-      '<body><iframe src="' + pdfDataUri + '"></iframe></body></html>'
-    );
-    newTab.document.close();
+  // Upload PDF to our Vercel API and open the hosted URL
+  // This gives a real HTTPS URL that iOS opens as full multi-page PDF
+  try {
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+
+    const response = await fetch('/api/upload-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdf: pdfBase64, filename }),
+    });
+
+    if(!response.ok) throw new Error('Upload failed');
+    const { url } = await response.json();
+
+    // Open the real hosted PDF URL — iOS shows full multi-page, share works perfectly
+    window.open(url, '_blank');
+
+  } catch(err) {
+    // Fallback to blob URL if API fails
+    console.error('PDF upload failed, falling back:', err);
+    const pdfBlob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    window.open(blobUrl, '_blank');
   }
 };
 
