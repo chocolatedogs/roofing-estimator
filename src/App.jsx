@@ -523,16 +523,16 @@ const generatePDF = (sections, filename) => {
   sections.forEach(sec => {
     if (sec.type === 'logo') {
       try {
-        doc.addImage(sec.src, 'PNG', margin, y, 120, 40);
-        const rx = margin + 130;
+        doc.addImage(sec.src, 'PNG', margin, y, 120, 45);
         doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
         let ry = y + 8;
         [sec.name, sec.address, sec.phone, sec.email, 'Lic# ' + sec.license].forEach(line => {
           doc.text(line, pageW - margin, ry, { align: 'right' });
           ry += 13;
         });
-        y += 50;
+        y += 75;
         drawLine([30, 58, 138]);
+        y += 6;
       } catch(e) { y += 10; }
     }
     else if (sec.type === 'badge') {
