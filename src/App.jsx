@@ -949,6 +949,33 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
             ]:[]),
           ], fname);
         }} color='#0f766e'>📄 Generate PDF — Client Copy</Btn>
+        <div style={{marginTop:10}}>
+          <Btn onClick={()=>{
+            const subject = encodeURIComponent('Arch Roofing & Repair — Estimate for ' + job.clientName);
+            const body = encodeURIComponent(
+              'Dear ' + job.clientName + ',\n\n' +
+              'Thank you for the opportunity to provide you with a roofing estimate. ' +
+              'Please find your proposal attached to this email.\n\n' +
+              'Your estimate total is ' + fmt(job.finalTotal) + '. ' +
+              'A 50% deposit of ' + fmt(Math.round(job.finalTotal * 0.5)) + ' is due upon signing, ' +
+              'with the remaining balance due at project completion.\n\n' +
+              'Please don\'t hesitate to contact us with any questions. ' +
+              'We look forward to working with you.\n\n' +
+              'Best regards,\n' +
+              'Arch Roofing & Repair, LLC\n' +
+              '(954) 295-3038\n' +
+              'ziaratheroofer@gmail.com\n' +
+              'Lic# CCC1333284'
+            );
+            const to = encodeURIComponent(job.clientEmail || '');
+            window.location.href = 'mailto:' + to + '?from=ziaratheroofer%40gmail.com&subject=' + subject + '&body=' + body;
+          }} color='#0a7c6e' style={{fontSize:15}}>
+            ✉️ Email Quote to Client
+          </Btn>
+          <p style={{fontSize:11,color:'#8e8e93',textAlign:'center',marginTop:6,lineHeight:1.5}}>
+            Tap "Generate PDF" first to save the PDF, then tap this button to open Mail with the quote details. Attach the saved PDF before sending.
+          </p>
+        </div>
       </div>
     </div>
   );
