@@ -646,7 +646,33 @@ const generatePDF = (sections, filename) => {
     }
   });
 
-  doc.save(filename + '.pdf');
+  // On iOS use native share sheet with actual PDF file
+  // On desktop fall back to download
+  const pdfBlob = doc.output('blob');
+  const file = new File([pdfBlob], filename + '.pdf', { type: 'application/pdf' });
+
+  if(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    // iOS native share sheet - shares actual PDF file
+    navigator.share({
+      files: [file],
+      title: filename,
+    }).catch(err => {
+      if(err.name !== 'AbortError') {
+        // Fallback to download if share fails
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename + '.pdf';
+        a.click(); URL.revokeObjectURL(url);
+      }
+    });
+  } else {
+    // Desktop - trigger download
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename + '.pdf';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
 };
 
 const InternalQuote = ({ job, company, onBack }) => {
