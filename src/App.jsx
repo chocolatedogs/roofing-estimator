@@ -190,16 +190,7 @@ const Step2 = ({ data, upd, onNext }) => {
           </div>
           <p style={{fontSize:12,color:'#6b7280',margin:0}}>Measure on-site and enter total. 1 square = 100 sq ft.</p>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-          {[['ridgeFt','Ridge (Linear Ft)'],['eavesFt','Eaves (Linear Ft)']].map(([k,lbl])=>(
-            <div key={k} style={{display:'flex',flexDirection:'column',gap:4}}>
-              <label style={{fontSize:10,fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:.5}}>{lbl}</label>
-              <input type="number" inputMode="decimal" placeholder="0" value={data[k]||''}
-                onChange={e=>upd({[k]:parseInt(e.target.value)||0})}
-                style={{background:'#fff',border:'1px solid #d1d5db',borderRadius:10,padding:'10px 12px',fontSize:16,fontWeight:600,color:'#1c1c1e',outline:'none',width:'100%',boxSizing:'border-box'}} />
-            </div>
-          ))}
-        </div>
+
       </div>
 
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
@@ -949,33 +940,7 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
             ]:[]),
           ], fname);
         }} color='#0f766e'>📄 Generate PDF — Client Copy</Btn>
-        <div style={{marginTop:10}}>
-          <Btn onClick={()=>{
-            const subject = encodeURIComponent('Arch Roofing & Repair — Estimate for ' + job.clientName);
-            const body = encodeURIComponent(
-              'Dear ' + job.clientName + ',\n\n' +
-              'Thank you for the opportunity to provide you with a roofing estimate. ' +
-              'Please find your proposal attached to this email.\n\n' +
-              'Your estimate total is ' + fmt(job.finalTotal) + '. ' +
-              'A 50% deposit of ' + fmt(Math.round(job.finalTotal * 0.5)) + ' is due upon signing, ' +
-              'with the remaining balance due at project completion.\n\n' +
-              'Please don\'t hesitate to contact us with any questions. ' +
-              'We look forward to working with you.\n\n' +
-              'Best regards,\n' +
-              'Arch Roofing & Repair, LLC\n' +
-              '(954) 295-3038\n' +
-              'ziaratheroofer@gmail.com\n' +
-              'Lic# CCC1333284'
-            );
-            const to = encodeURIComponent(job.clientEmail || '');
-            window.location.href = 'mailto:' + to + '?from=ziaratheroofer%40gmail.com&subject=' + subject + '&body=' + body;
-          }} color='#0a7c6e' style={{fontSize:15}}>
-            ✉️ Email Quote to Client
-          </Btn>
-          <p style={{fontSize:11,color:'#8e8e93',textAlign:'center',marginTop:6,lineHeight:1.5}}>
-            Tap "Generate PDF" first to save the PDF, then tap this button to open Mail with the quote details. Attach the saved PDF before sending.
-          </p>
-        </div>
+
       </div>
     </div>
   );
@@ -1081,6 +1046,42 @@ const SuccessScreen = ({ job, company, contract, onDone }) => {
   );
 };
 
+// ─── SAVED JOB VIEW ──────────────────────────────────────────────────────────
+const SavedJobView = ({ job, company, contract, onBack }) => {
+  const [view, setView] = useState(null);
+  if(view==='internal') return <InternalQuote job={job} company={company} onBack={()=>setView(null)} />;
+  if(view==='client') return <ClientQuote job={job} company={company} contract={contract} onBack={()=>setView(null)} />;
+
+  return (
+    <div style={{padding:16,paddingBottom:100}}>
+      <button onClick={onBack} style={{background:'none',border:'none',color:'#007aff',fontWeight:600,fontSize:16,cursor:'pointer',marginBottom:16,display:'flex',alignItems:'center',gap:4}}>
+        ‹ Back to Jobs
+      </button>
+      <div style={{background:'#1c1c1e',borderRadius:16,padding:20,color:'#fff',marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:700,color:'#007aff',textTransform:'uppercase',letterSpacing:.5,marginBottom:4}}>Saved Quote</div>
+        <div style={{fontSize:22,fontWeight:700,marginBottom:2}}>{job.clientName}</div>
+        <div style={{fontSize:13,color:'#aeaeb2',marginBottom:12}}>{job.address}</div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:11,color:'#8e8e93'}}>Total</div>
+            <div style={{fontSize:30,fontWeight:800}}>{fmt(job.finalTotal)}</div>
+          </div>
+          <div style={{textAlign:'right'}}>
+            <div style={{fontSize:11,color:'#8e8e93'}}>Date</div>
+            <div style={{fontSize:14,fontWeight:600,color:'#34c759'}}>{job.date}</div>
+            <div style={{fontSize:11,color:'#8e8e93',marginTop:4}}>{job.id}</div>
+          </div>
+        </div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#1c1c1e',marginBottom:4}}>Print or Share:</div>
+        <Btn onClick={()=>setView('client')} color='#0f766e'>📄 Client Quote (with T&Cs)</Btn>
+        <Btn onClick={()=>setView('internal')} color='#1e3a8a'>📋 My Internal Copy</Btn>
+      </div>
+    </div>
+  );
+};
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [tab, setTab] = useState('jobs');
@@ -1089,6 +1090,7 @@ export default function App() {
   const [company, setCompany] = useState(() => load('company', COMPANY_DEFAULTS));
   const [contract, setContract] = useState(() => load('contract', DEFAULT_CONTRACT));
   const [completedJob, setCompletedJob] = useState(null);
+  const [viewingJob, setViewingJob] = useState(null);
 
   const blankJob = () => ({
     jobType:'replacement', clientName:'', phone:'', clientEmail:'', address:'',
@@ -1122,9 +1124,11 @@ export default function App() {
         {/* Header */}
         {tab==='new' && !completedJob && (
           <div style={{background:'rgba(255,255,255,.92)',backdropFilter:'blur(20px)',borderBottom:'0.5px solid #c6c6c8',padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+            {/* Left: Back or Cancel */}
             {step>1
-              ? <button onClick={()=>setStep(s=>s-1)} style={{background:'none',border:'none',color:'#007aff',fontWeight:600,fontSize:16,cursor:'pointer',display:'flex',alignItems:'center'}}>‹ Back</button>
-              : <button onClick={()=>setTab('jobs')} style={{background:'none',border:'none',color:'#007aff',fontWeight:600,fontSize:15,cursor:'pointer'}}>Cancel</button>}
+              ? <button onClick={()=>setStep(s=>s-1)} style={{background:'none',border:'none',color:'#007aff',fontWeight:600,fontSize:16,cursor:'pointer',minWidth:60}}>‹ Back</button>
+              : <button onClick={()=>{ if(window.confirm('Cancel this quote? All entered data will be lost.')) setTab('jobs'); }} style={{background:'none',border:'none',color:'#007aff',fontWeight:600,fontSize:15,cursor:'pointer',minWidth:60}}>Cancel</button>}
+            {/* Center: Title + dots */}
             <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
               <span style={{fontWeight:700,fontSize:16,color:'#1c1c1e'}}>{STEPS[step-1]}</span>
               <div style={{display:'flex',gap:4,marginTop:4}}>
@@ -1133,14 +1137,19 @@ export default function App() {
                 ))}
               </div>
             </div>
-            {step<4 ? <button onClick={()=>setStep(s=>s+1)} style={{background:'none',border:'none',color:'#007aff',fontWeight:700,fontSize:15,cursor:'pointer'}}>Next</button>
-              : <div style={{width:48}} />}
+            {/* Right: Next (steps 1-4) or spacer (step 5) */}
+            {step<5
+              ? <button onClick={()=>setStep(s=>s+1)} style={{background:'none',border:'none',color:'#007aff',fontWeight:700,fontSize:16,cursor:'pointer',minWidth:60,textAlign:'right'}}>Next</button>
+              : <div style={{minWidth:60}} />}
           </div>
         )}
 
         {/* Content */}
         <div style={{flex:1,overflowY:'auto',overflowX:'hidden'}}>
-          {tab==='jobs' && (
+          {tab==='jobs' && viewingJob && (
+            <SavedJobView job={viewingJob} company={company} contract={contract} onBack={()=>setViewingJob(null)} />
+          )}
+          {tab==='jobs' && !viewingJob && (
             <div style={{padding:16,paddingBottom:100}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
                 <div>
@@ -1155,15 +1164,16 @@ export default function App() {
                     <p style={{margin:0}}>No estimates yet. Tap + to start.</p>
                   </div>
                 : jobs.map(j=>(
-                  <div key={j.id} style={{background:'#fff',borderRadius:16,padding:16,marginBottom:10,border:'1px solid #e5e5ea',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div key={j.id} onClick={()=>setViewingJob(j)} style={{background:'#fff',borderRadius:16,padding:16,marginBottom:10,border:'1px solid #e5e5ea',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',activeOpacity:.7}}>
                     <div>
                       <div style={{fontWeight:700,fontSize:16,color:'#1c1c1e'}}>{j.clientName}</div>
                       <div style={{fontSize:13,color:'#8e8e93',marginTop:2}}>{j.address}</div>
                       <div style={{fontSize:11,color:'#c7c7cc',marginTop:4}}>{j.id} · {j.date}</div>
                     </div>
-                    <div style={{textAlign:'right'}}>
-                      <div style={{background:'#dcfce7',color:'#16a34a',fontSize:10,fontWeight:700,textTransform:'uppercase',padding:'3px 8px',borderRadius:6,marginBottom:4}}>{j.status}</div>
+                    <div style={{textAlign:'right',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
+                      <div style={{background:'#dcfce7',color:'#16a34a',fontSize:10,fontWeight:700,textTransform:'uppercase',padding:'3px 8px',borderRadius:6}}>{j.status}</div>
                       <div style={{fontWeight:700,fontSize:15,color:'#1c1c1e'}}>{fmt(j.finalTotal)}</div>
+                      <div style={{color:'#c7c7cc',fontSize:18}}>›</div>
                     </div>
                   </div>
                 ))
@@ -1196,7 +1206,12 @@ export default function App() {
               <span style={{fontSize:24}}>📋</span>
               <span style={{fontSize:10,fontWeight:600}}>Jobs</span>
             </button>
-            <button onClick={()=>{setTab('new');setStep(1);setJob(blankJob());setCompletedJob(null);}}
+            <button onClick={()=>{
+              if(tab==='new' && step>1 && !completedJob){
+                if(!window.confirm('You have a quote in progress. Starting a new quote will lose all entered data. Continue?')) return;
+              }
+              setTab('new'); setStep(1); setJob(blankJob()); setCompletedJob(null);
+            }}
               style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,background:'none',border:'none',cursor:'pointer',marginTop:-8}}>
               <div style={{width:56,height:56,background:'#007aff',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(0,122,255,.4)',color:'#fff',fontSize:30}}>+</div>
               <span style={{fontSize:10,fontWeight:600,color: tab==='new'?'#007aff':'#8e8e93'}}>New Quote</span>
