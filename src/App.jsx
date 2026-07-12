@@ -636,8 +636,8 @@ const generatePDF = async (sections, filename) => {
       y = rowY + (col>0 ? imgH+8 : 0) + 8;
     }
     else if (sec.type === 'acceptance') {
-      // Need room for acceptance text + signature block (approx 160pt total)
-      if(y + 160 > pageH - margin){ doc.addPage(); y = margin; }
+      // Need room for acceptance text + signature block (approx 200pt total)
+      if(y + 200 > pageH - margin){ doc.addPage(); y = margin; }
       y += 4;
       doc.setDrawColor(15,118,110); doc.setLineWidth(1);
       doc.line(margin, y, pageW-margin, y); y += 12;
@@ -652,8 +652,8 @@ const generatePDF = async (sections, filename) => {
       y += 10;
     }
     else if (sec.type === 'signature') {
-      // Check for enough room for header + signature + signed line all together
-      if(y + 90 > pageH - margin){ doc.addPage(); y = margin; }
+      // Need enough room for header + image + signed line — if not, new page
+      if(y + 120 > pageH - margin){ doc.addPage(); y = margin; }
       doc.setFontSize(9); doc.setFont('helvetica','bold');
       doc.setTextColor(...(sec.color||[15,118,110]));
       doc.text('CLIENT SIGNATURE', margin, y); y += 14;
@@ -871,7 +871,6 @@ const InternalQuote = ({ job, company, onBack }) => {
               {type:'photos',photos:job.photos}
             ]:[]),
             ...(job.signature?[
-              {type:'sectionHeader',text:'Client Signature',color:[30,58,138]},
               {type:'signature',src:job.signature,name:job.clientName,date:job.date,color:[30,58,138]}
             ]:[]),
           ], fname);
