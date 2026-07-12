@@ -652,7 +652,8 @@ const generatePDF = async (sections, filename) => {
       y += 10;
     }
     else if (sec.type === 'signature') {
-      checkPage(80);
+      // Check for enough room for header + signature + signed line all together
+      if(y + 90 > pageH - margin){ doc.addPage(); y = margin; }
       doc.setFontSize(9); doc.setFont('helvetica','bold');
       doc.setTextColor(...(sec.color||[15,118,110]));
       doc.text('CLIENT SIGNATURE', margin, y); y += 14;
