@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import jsPDF from 'jspdf';
 import {
   ChevronLeft, Camera, Mic, Plus, Check, X,
   MapPin, FileText, Settings, User,
@@ -485,72 +486,135 @@ const PRINT_STYLE_CLIENT = `
 
 
 // ─── PDF GENERATOR ────────────────────────────────────────────────────────────
-const generatePDF = (htmlContent, title) => {
-  const fullHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-      color: #1c1c1e;
-      padding: 32px;
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-    }
-    img { max-width: 100%; display: block; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1e3a8a; padding-bottom: 16px; margin-bottom: 16px; }
-    .header-right { text-align: right; font-size: 12px; line-height: 1.8; color: #374151; }
-    .badge { padding: 8px 14px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-    .badge-internal { background: #1e3a8a; color: white; }
-    .badge-client { background: #0f766e; color: white; }
-    .section { background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
-    .section-title { font-size: 11px; font-weight: 700; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-    .section-title-green { color: #0f766e; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; }
-    .grid-full { grid-column: 1 / -1; }
-    .label { color: #6b7280; }
-    .row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
-    .total-row { display: flex; justify-content: space-between; border-top: 1.5px solid #d1d5db; padding-top: 10px; margin-top: 6px; }
-    .total-label { font-size: 15px; font-weight: 700; }
-    .total-amount { font-size: 18px; font-weight: 700; color: #1e3a8a; }
-    .price-box { background: #f0fdfa; border: 2px solid #0f766e; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-    .price-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .price-total-label { font-size: 16px; font-weight: 700; }
-    .price-total-amount { font-size: 28px; font-weight: 800; color: #0f766e; }
-    .divider { height: 1px; background: #a7f3d0; margin: 10px 0; }
-    .contract { font-size: 11px; color: #374151; line-height: 1.8; white-space: pre-line; }
-    .acceptance { border: 2px solid #0f766e; border-radius: 12px; padding: 16px; margin-top: 14px; }
-    .sig-img { max-width: 300px; border: 1px solid #d1d5db; border-radius: 8px; margin-top: 8px; }
-    .sig-label { font-size: 11px; color: #6b7280; margin-top: 6px; }
-    .note { font-size: 11px; color: #6b7280; margin-top: 10px; line-height: 1.6; }
-    .boilerplate { font-size: 12px; color: #374151; line-height: 1.8; white-space: pre-line; }
-    .prepared-for { font-size: 14px; line-height: 1.8; margin-bottom: 14px; }
-    .prepared-name { font-weight: 600; font-size: 16px; }
-    .scope-title { font-size: 11px; font-weight: 700; color: #0f766e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-    @media print {
-      @page { margin: 0.4in; size: letter; }
-      body { padding: 0; }
-    }
-  </style>
-</head>
-<body>
-${htmlContent}
-<script>
-  window.onload = function() {
-    document.title = "${title}";
-  }
-<\/script>
-</body>
-</html>`;
+const generatePDF = (sections, filename) => {
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 40;
+  const contentW = pageW - margin * 2;
+  let y = margin;
 
-  const blob = new Blob([fullHtml], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+  const checkPage = (needed = 20) => {
+    if (y + needed > pageH - margin) { doc.addPage(); y = margin; }
+  };
+
+  const drawText = (text, x, size, style, color, maxW) => {
+    doc.setFontSize(size);
+    doc.setFont('helvetica', style || 'normal');
+    if (color) doc.setTextColor(...color);
+    else doc.setTextColor(28, 28, 30);
+    const lines = doc.splitTextToSize(String(text || ''), maxW || contentW);
+    checkPage(lines.length * (size * 1.4));
+    doc.text(lines, x, y);
+    y += lines.length * (size * 1.4);
+  };
+
+  const drawLine = (color = [229, 229, 234]) => {
+    doc.setDrawColor(...color);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+  };
+
+  const drawRect = (h, fillColor) => {
+    doc.setFillColor(...fillColor);
+    doc.rect(margin, y, contentW, h, 'F');
+  };
+
+  sections.forEach(sec => {
+    if (sec.type === 'logo') {
+      try {
+        doc.addImage(sec.src, 'PNG', margin, y, 120, 40);
+        const rx = margin + 130;
+        doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
+        let ry = y + 8;
+        [sec.name, sec.address, sec.phone, sec.email, 'Lic# ' + sec.license].forEach(line => {
+          doc.text(line, pageW - margin, ry, { align: 'right' });
+          ry += 13;
+        });
+        y += 50;
+        drawLine([30, 58, 138]);
+      } catch(e) { y += 10; }
+    }
+    else if (sec.type === 'badge') {
+      drawRect(28, sec.color || [30, 58, 138]);
+      doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+      doc.text(sec.left, margin + 8, y + 18);
+      doc.text(sec.right, pageW - margin - 8, y + 18, { align: 'right' });
+      y += 36;
+    }
+    else if (sec.type === 'sectionHeader') {
+      checkPage(30);
+      doc.setFontSize(9); doc.setFont('helvetica','bold');
+      doc.setTextColor(...(sec.color || [30, 58, 138]));
+      doc.text(sec.text.toUpperCase(), margin, y);
+      y += 16;
+    }
+    else if (sec.type === 'row2') {
+      checkPage(18);
+      doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(107,114,128);
+      doc.text(sec.label, margin, y);
+      doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
+      doc.text(String(sec.value || ''), margin + contentW * 0.45, y);
+      y += 16;
+    }
+    else if (sec.type === 'totalRow') {
+      checkPage(24);
+      drawLine();
+      doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
+      doc.text('TOTAL', margin, y);
+      doc.setTextColor(...(sec.color || [30, 58, 138]));
+      doc.text(sec.value, pageW - margin, y, { align: 'right' });
+      y += 20;
+    }
+    else if (sec.type === 'priceBox') {
+      checkPage(80);
+      doc.setFillColor(240, 253, 250);
+      doc.roundedRect(margin, y, contentW, 70, 6, 6, 'F');
+      doc.setDrawColor(15, 118, 110); doc.setLineWidth(1.5);
+      doc.roundedRect(margin, y, contentW, 70, 6, 6, 'S');
+      doc.setLineWidth(0.5);
+      doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
+      doc.text('Total Price', margin + 12, y + 22);
+      doc.setFontSize(20); doc.setTextColor(15,118,110);
+      doc.text(sec.total, pageW - margin - 12, y + 22, { align: 'right' });
+      doc.setDrawColor(167, 243, 208);
+      doc.line(margin + 12, y + 32, pageW - margin - 12, y + 32);
+      doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(55,65,81);
+      doc.text('50% Deposit (due when contract signed)', margin + 12, y + 46);
+      doc.setFont('helvetica','bold');
+      doc.text(sec.deposit, pageW - margin - 12, y + 46, { align: 'right' });
+      doc.setFont('helvetica','normal');
+      doc.text('50% Balance (due at project completion)', margin + 12, y + 60);
+      doc.setFont('helvetica','bold');
+      doc.text(sec.deposit, pageW - margin - 12, y + 60, { align: 'right' });
+      y += 80;
+    }
+    else if (sec.type === 'text') {
+      checkPage(20);
+      drawText(sec.content, margin, sec.size || 10, sec.style || 'normal', sec.color, contentW);
+      y += 6;
+    }
+    else if (sec.type === 'spacer') {
+      y += sec.h || 12;
+    }
+    else if (sec.type === 'signature') {
+      checkPage(80);
+      doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(15,118,110);
+      doc.text('CLIENT SIGNATURE', margin, y); y += 14;
+      try {
+        doc.addImage(sec.src, 'PNG', margin, y, 200, 50);
+        y += 58;
+      } catch(e) { y += 20; }
+      doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(107,114,128);
+      doc.text('Signed: ' + sec.name + ' — ' + sec.date, margin, y);
+      y += 16;
+    }
+    else if (sec.type === 'divider') {
+      y += 6; drawLine(sec.color || [229,229,234]); 
+    }
+  });
+
+  doc.save(filename + '.pdf');
 };
 
 const InternalQuote = ({ job, company, onBack }) => {
@@ -673,58 +737,50 @@ const InternalQuote = ({ job, company, onBack }) => {
           const deposit = Math.round(job.finalTotal*0.5);
           const roofLabel = ROOF_TYPES.find(t=>t.id===job.roofType)?.label||'—';
           const dmg = (job.damageIssues||[]).map(id=>DAMAGE_ISSUES.find(d=>d.id===id)?.label).filter(Boolean);
-          const html = `
-            <div class="header">
-              <img src="${LOGO_B64}" alt="Logo" style="height:60px;object-fit:contain;" />
-              <div class="header-right">
-                <strong>${company.name}</strong><br/>
-                ${company.address}<br/>
-                ${company.phone}<br/>
-                ${company.email}<br/>
-                Lic# ${company.license}
-              </div>
-            </div>
-            <div class="badge badge-internal">
-              <span style="font-weight:700;font-size:14px;">INTERNAL ESTIMATOR COPY</span>
-              <span style="font-size:12px;color:#93c5fd;">Job #${job.id} · ${job.date}</span>
-            </div>
-            <div class="section">
-              <div class="section-title">Client</div>
-              <div class="grid">
-                <div><span class="label">Name: </span><strong>${job.clientName}</strong></div>
-                <div><span class="label">Phone: </span>${job.phone||'—'}</div>
-                <div class="grid-full"><span class="label">Address: </span>${job.address}</div>
-                <div class="grid-full"><span class="label">Email: </span>${job.clientEmail||'—'}</div>
-              </div>
-            </div>
-            <div class="section">
-              <div class="section-title">Job Details</div>
-              <div class="grid">
-                <div><span class="label">Type: </span><strong>${job.jobType==='replacement'?'Replacement':'Repair'}</strong></div>
-                <div><span class="label">System: </span>${roofLabel}</div>
-                <div><span class="label">Sq Ft: </span>${job.sqft}</div>
-                <div><span class="label">Squares: </span>${squares}</div>
-                <div><span class="label">Stories: </span>${job.stories}</div>
-                <div><span class="label">Pitch: </span>${job.pitch}</div>
-                ${job.ridgeFt>0?`<div><span class="label">Ridge: </span>${job.ridgeFt} LF</div>`:''}
-                ${job.eavesFt>0?`<div><span class="label">Eaves: </span>${job.eavesFt} LF</div>`:''}
-              </div>
-            </div>
-            <div class="section">
-              <div class="section-title">Pricing Breakdown</div>
-              <div class="row"><span class="label">Price/Square</span><strong>${fmt(job.pricePerSquare||0)}</strong></div>
-              <div class="row"><span class="label">Squares</span><strong>× ${squares}</strong></div>
-              <div class="row"><span class="label">Materials Total</span><strong>${fmt(matTotal)}</strong></div>
-              ${job.jobType==='repair'?`<div class="row"><span class="label">Labor</span><strong>${fmt(laborTotal)}</strong></div>`:''}
-              <div class="total-row"><span class="total-label">TOTAL</span><span class="total-amount">${fmt(job.finalTotal)}</span></div>
-              <div class="row"><span class="label">50% Deposit</span><strong style="color:#16a34a;">${fmt(deposit)}</strong></div>
-              <div class="row"><span class="label">Balance at Completion</span><strong>${fmt(deposit)}</strong></div>
-            </div>
-            ${dmg.length>0?`<div class="section"><div class="section-title">Observed Issues</div>${dmg.map(d=>`<div style="font-size:13px;padding:3px 0;">• ${d}</div>`).join('')}</div>`:''}
-            ${job.notes?`<div class="section"><div class="section-title">Inspector Notes</div><p style="font-size:13px;line-height:1.6;">${job.notes}</p></div>`:''}
-            ${job.signature?`<div class="section"><div class="section-title">Client Signature</div><img class="sig-img" src="${job.signature}" alt="Signature"/><div class="sig-label">Signed on ${job.date}</div></div>`:''}
-          `;
-          generatePDF(html, 'Internal Copy - ' + job.clientName + ' - ' + job.date);
+          const fname = 'InternalCopy-' + job.clientName.replace(/ /g,'_') + '-' + job.date.replace(/\//g,'-');
+          generatePDF([
+            { type:'logo', src:LOGO_B64, name:company.name, address:company.address, phone:company.phone, email:company.email, license:company.license },
+            { type:'badge', left:'INTERNAL ESTIMATOR COPY', right:'Job #'+job.id+' · '+job.date, color:[30,58,138] },
+            { type:'spacer', h:10 },
+            { type:'sectionHeader', text:'Client', color:[30,58,138] },
+            { type:'row2', label:'Name:', value:job.clientName },
+            { type:'row2', label:'Phone:', value:job.phone||'—' },
+            { type:'row2', label:'Address:', value:job.address },
+            { type:'row2', label:'Email:', value:job.clientEmail||'—' },
+            { type:'spacer', h:10 },
+            { type:'sectionHeader', text:'Job Details', color:[30,58,138] },
+            { type:'row2', label:'Job Type:', value:job.jobType==='replacement'?'Replacement':'Repair' },
+            { type:'row2', label:'Roof System:', value:roofLabel },
+            { type:'row2', label:'Square Footage:', value:job.sqft+' sqft' },
+            { type:'row2', label:'Squares:', value:squares },
+            { type:'row2', label:'Stories:', value:job.stories },
+            { type:'row2', label:'Pitch:', value:job.pitch },
+            ...(job.ridgeFt>0 ? [{ type:'row2', label:'Ridge:', value:job.ridgeFt+' LF' }] : []),
+            ...(job.eavesFt>0 ? [{ type:'row2', label:'Eaves:', value:job.eavesFt+' LF' }] : []),
+            { type:'spacer', h:10 },
+            { type:'sectionHeader', text:'Pricing Breakdown', color:[30,58,138] },
+            { type:'row2', label:'Price Per Square:', value:fmt(job.pricePerSquare||0) },
+            { type:'row2', label:'Number of Squares:', value:'× '+squares },
+            { type:'row2', label:'Materials Total:', value:fmt(matTotal) },
+            ...(job.jobType==='repair' ? [{ type:'row2', label:'Labor:', value:fmt(laborTotal) }] : []),
+            { type:'totalRow', value:fmt(job.finalTotal), color:[30,58,138] },
+            { type:'row2', label:'50% Deposit Due:', value:fmt(deposit) },
+            { type:'row2', label:'Balance at Completion:', value:fmt(deposit) },
+            ...(dmg.length>0 ? [
+              { type:'spacer', h:10 },
+              { type:'sectionHeader', text:'Observed Issues', color:[30,58,138] },
+              ...dmg.map(d=>({ type:'text', content:'• '+d, size:10 }))
+            ] : []),
+            ...(job.notes ? [
+              { type:'spacer', h:10 },
+              { type:'sectionHeader', text:'Inspector Notes', color:[30,58,138] },
+              { type:'text', content:job.notes, size:10 }
+            ] : []),
+            ...(job.signature ? [
+              { type:'spacer', h:10 },
+              { type:'signature', src:job.signature, name:job.clientName, date:job.date }
+            ] : []),
+          ], fname);
         }} color='#1e3a8a'>📄 Generate PDF — My Copy</Btn>
       </div>
     </div>
@@ -828,61 +884,32 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
         <Btn onClick={()=>{
           const deposit = Math.round(job.finalTotal*0.5);
           const boilerplate = job.jobType==='replacement' ? REPLACEMENT_BOILERPLATE : REPAIR_BOILERPLATE;
-          const html = `
-            <div class="header">
-              <img src="${LOGO_B64}" alt="Logo" style="height:60px;object-fit:contain;" />
-              <div class="header-right">
-                <strong>${company.name}</strong><br/>
-                ${company.address}<br/>
-                ${company.phone}<br/>
-                ${company.email}<br/>
-                Lic# ${company.license}
-              </div>
-            </div>
-            <div class="badge badge-client" style="background:#0f766e;">
-              <span style="font-weight:700;font-size:14px;">PROPOSAL / ESTIMATE</span>
-              <span style="font-size:12px;color:#99f6e4;">${job.date}</span>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div class="scope-title">Prepared For</div>
-              <div class="prepared-for">
-                <div class="prepared-name">${job.clientName}</div>
-                <div>${job.address}</div>
-                ${job.phone?`<div>${job.phone}</div>`:''}
-                ${job.clientEmail?`<div>${job.clientEmail}</div>`:''}
-              </div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div class="scope-title">Scope of Work — ${job.jobType==='replacement'?'Roof Replacement':'Roof Repair'}</div>
-              <div class="boilerplate">${boilerplate}</div>
-            </div>
-            <div class="price-box">
-              <div class="scope-title">Pricing</div>
-              <div class="price-total">
-                <span class="price-total-label">Total Price</span>
-                <span class="price-total-amount">${fmt(job.finalTotal)}</span>
-              </div>
-              <div class="divider"></div>
-              <div class="row"><span>50% Deposit (due when contract signed)</span><strong>${fmt(deposit)}</strong></div>
-              <div class="row"><span>50% Balance (due at project completion)</span><strong>${fmt(deposit)}</strong></div>
-              <div class="note">+ Cost of any additional woodwork per above price schedule (Due at Project Completion). This proposal is valid for 7 days.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div class="scope-title">Terms &amp; Conditions</div>
-              <div class="contract">${contract}</div>
-            </div>
-            <div class="acceptance">
-              <p style="font-size:12px;line-height:1.6;margin-bottom:12px;">
-                <strong>Acceptance of Proposal</strong> — The terms, specifications, and all terms and conditions have been read and are satisfactory and are hereby accepted. I (we) hereby authorize Arch Roofing &amp; Repair, LLC to provide the services as specified above.
-              </p>
-              ${job.signature?`
-                <div class="scope-title">Client Signature</div>
-                <img class="sig-img" src="${job.signature}" alt="Signature"/>
-                <div class="sig-label">Signed: ${job.clientName} — ${job.date}</div>
-              `:'<div style="height:60px;border-bottom:1px solid #d1d5db;margin-top:20px;"></div><div style="font-size:11px;color:#6b7280;margin-top:4px;">Signature / Date</div>'}
-            </div>
-          `;
-          generatePDF(html, 'Quote - ' + job.clientName + ' - ' + job.date);
+          const fname = 'Quote-' + job.clientName.replace(/ /g,'_') + '-' + job.date.replace(/\//g,'-');
+          generatePDF([
+            { type:'logo', src:LOGO_B64, name:company.name, address:company.address, phone:company.phone, email:company.email, license:company.license },
+            { type:'badge', left:'PROPOSAL / ESTIMATE', right:job.date, color:[15,118,110] },
+            { type:'spacer', h:10 },
+            { type:'sectionHeader', text:'Prepared For', color:[15,118,110] },
+            { type:'text', content:job.clientName, size:13, style:'bold' },
+            { type:'text', content:job.address, size:10 },
+            ...(job.phone ? [{ type:'text', content:job.phone, size:10 }] : []),
+            ...(job.clientEmail ? [{ type:'text', content:job.clientEmail, size:10 }] : []),
+            { type:'spacer', h:10 },
+            { type:'sectionHeader', text:'Scope of Work — '+(job.jobType==='replacement'?'Roof Replacement':'Roof Repair'), color:[15,118,110] },
+            { type:'text', content:boilerplate, size:9 },
+            { type:'spacer', h:10 },
+            { type:'priceBox', total:fmt(job.finalTotal), deposit:fmt(deposit) },
+            { type:'spacer', h:10 },
+            { type:'sectionHeader', text:'Terms & Conditions', color:[15,118,110] },
+            { type:'text', content:contract, size:8, color:[55,65,81] },
+            { type:'spacer', h:10 },
+            { type:'divider', color:[15,118,110] },
+            { type:'text', content:'Acceptance of Proposal — The terms, specifications, and all terms and conditions have been read and are satisfactory and are hereby accepted. I (we) hereby authorize Arch Roofing & Repair, LLC to provide the services as specified above.', size:9 },
+            { type:'spacer', h:10 },
+            ...(job.signature ? [
+              { type:'signature', src:job.signature, name:job.clientName, date:job.date }
+            ] : []),
+          ], fname);
         }} color='#0f766e'>📄 Generate PDF — Client Copy</Btn>
       </div>
     </div>
