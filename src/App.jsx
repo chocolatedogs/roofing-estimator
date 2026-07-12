@@ -278,7 +278,28 @@ const Step3 = ({ data, upd, onNext }) => {
           <label style={{aspectRatio:'1',borderRadius:12,border:'2px dashed #d1d5db',background:'#f9f9f9',
             display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',cursor:'pointer',gap:4}}>
             <input type="file" accept="image/*" capture="environment" style={{display:'none'}}
-              onChange={e=>{ if(e.target.files?.[0]){ const u=URL.createObjectURL(e.target.files[0]); upd({photos:[...(data.photos||[]),u]}); }}} />
+              onChange={e=>{
+                if(e.target.files?.[0]){
+                  const file = e.target.files[0];
+                  const reader = new FileReader();
+                  reader.onload = evt => {
+                    const img = new Image();
+                    img.onload = () => {
+                      const canvas = document.createElement('canvas');
+                      const MAX = 800;
+                      let w = img.width, h = img.height;
+                      if(w > h) { if(w > MAX){ h = Math.round(h*MAX/w); w = MAX; } }
+                      else { if(h > MAX){ w = Math.round(w*MAX/h); h = MAX; } }
+                      canvas.width = w; canvas.height = h;
+                      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                      const thumb = canvas.toDataURL('image/jpeg', 0.7);
+                      upd({photos:[...(data.photos||[]), thumb]});
+                    };
+                    img.src = evt.target.result;
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }} />
             <span style={{fontSize:24}}>📷</span>
             <span style={{fontSize:11,fontWeight:600,color:'#8e8e93'}}>Add</span>
           </label>
