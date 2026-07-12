@@ -226,6 +226,24 @@ const Step2 = ({ data, upd, onNext }) => {
         </div>
       </div>
 
+      {/* Shingle Color */}
+      {(data.roofType==='asphalt'||data.roofType==='tile') && (
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+          <label style={{fontSize:11,fontWeight:700,color:'#8e8e93',textTransform:'uppercase',letterSpacing:.5}}>Shingle / Tile Color</label>
+          <input type="text" placeholder="e.g. Weathered Wood, Charcoal..."
+            value={data.shingleColor||''}
+            onChange={e=>upd({shingleColor:e.target.value})}
+            style={{background:'#f2f2f7',border:'1.5px solid #e5e5ea',borderRadius:12,padding:'12px 14px',fontSize:16,color:'#1c1c1e',outline:'none',width:'100%',boxSizing:'border-box'}} />
+        </div>
+      )}
+
+      {/* Drip Edge Color */}
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        <label style={{fontSize:11,fontWeight:700,color:'#8e8e93',textTransform:'uppercase',letterSpacing:.5}}>Drip Edge Color</label>
+        <Seg options={[{label:'Brown',value:'Brown'},{label:'White',value:'White'}]}
+          selected={data.dripEdgeColor||'Brown'} onChange={v=>upd({dripEdgeColor:v})} />
+      </div>
+
       {!data.sqft && <div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:12,padding:'10px 14px',display:'flex',gap:8,alignItems:'center'}}>
         <span style={{fontSize:16}}>⚠️</span>
         <span style={{fontSize:12,color:'#92400e',fontWeight:500}}>Enter square footage above — required to calculate your quote.</span>
@@ -808,8 +826,8 @@ const InternalQuote = ({ job, company, onBack }) => {
             { type:'row2', label:'Squares:', value:String(squares) },
             { type:'row2', label:'Stories:', value:String(job.stories) },
             { type:'row2', label:'Pitch:', value:job.pitch },
-            ...(job.ridgeFt>0?[{type:'row2',label:'Ridge:',value:job.ridgeFt+' LF'}]:[]),
-            ...(job.eavesFt>0?[{type:'row2',label:'Eaves:',value:job.eavesFt+' LF'}]:[]),
+            ...(job.shingleColor?[{type:'row2',label:'Shingle/Tile Color:',value:job.shingleColor}]:[]),
+            { type:'row2', label:'Drip Edge Color:', value:job.dripEdgeColor||'Brown' },
             { type:'sectionHeader', text:'Pricing Breakdown', color:[30,58,138] },
             { type:'row2', label:'Price Per Square:', value:fmt(job.pricePerSquare||0) },
             { type:'row2', label:'Number of Squares:', value:'× '+squares },
@@ -826,6 +844,27 @@ const InternalQuote = ({ job, company, onBack }) => {
               {type:'sectionHeader',text:'Inspector Notes',color:[30,58,138]},
               {type:'text',content:job.notes,size:10}
             ]:[]),
+            ...((()=>{
+              const acc = job.accessories||{};
+              const items = [
+                ...(acc.leadBoot25>0?[acc.leadBoot25+'x Lead Pipe Boot 2.5"']:[]),
+                ...(acc.leadBoot35>0?[acc.leadBoot35+'x Lead Pipe Boot 3.5"']:[]),
+                ...(acc.leadBoot4>0?[acc.leadBoot4+'x Lead Pipe Boot 4"']:[]),
+                ...(acc.leadBootService>0?[acc.leadBootService+'x Lead Service Boot']:[]),
+                ...(acc.gooseNeck4>0?[acc.gooseNeck4+'x Goose Neck 4"']:[]),
+                ...(acc.gooseNeck10>0?[acc.gooseNeck10+'x Goose Neck 10"']:[]),
+                ...(acc.offRidge4>0?[acc.offRidge4+'x Off-Ridge Vent 4ft']:[]),
+                ...(acc.offRidge6>0?[acc.offRidge6+'x Off-Ridge Vent 6ft']:[]),
+                ...(acc.offRidge8>0?[acc.offRidge8+'x Off-Ridge Vent 8ft']:[]),
+                ...(acc.offRidge10>0?[acc.offRidge10+'x Off-Ridge Vent 10ft']:[]),
+                ...(acc.universalBoot>0?[acc.universalBoot+'x Universal Pipe Boot']:[]),
+                ...(acc.serviceBoot>0?[acc.serviceBoot+'x Service Boot']:[]),
+              ];
+              return items.length>0 ? [
+                {type:'sectionHeader',text:'Accessories / Penetrations',color:[30,58,138]},
+                ...items.map(i=>({type:'text',content:'• '+i,size:10}))
+              ] : [];
+            })()),
             ...((job.photos||[]).length>0?[
               {type:'sectionHeader',text:'Site Photos',color:[30,58,138]},
               {type:'photos',photos:job.photos}
@@ -1069,6 +1108,75 @@ const SuccessScreen = ({ job, company, contract, onDone }) => {
   );
 };
 
+// ─── STEP 5: ACCESSORIES ─────────────────────────────────────────────────────
+const Step5Accessories = ({ data, upd, onNext }) => {
+  const acc = data.accessories || {};
+  const updAcc = (key, val) => upd({ accessories: { ...acc, [key]: parseInt(val)||0 } });
+
+  const Section = ({ title }) => (
+    <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8',textTransform:'uppercase',
+      letterSpacing:.5,marginTop:16,marginBottom:8,paddingBottom:4,
+      borderBottom:'1.5px solid #bfdbfe'}}>{title}</div>
+  );
+
+  const CountField = ({ label, fieldKey }) => (
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+      padding:'10px 0',borderBottom:'0.5px solid #f2f2f7'}}>
+      <span style={{fontSize:14,fontWeight:500,color:'#1c1c1e'}}>{label}</span>
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <button onClick={()=>updAcc(fieldKey, Math.max(0,(acc[fieldKey]||0)-1))}
+          style={{width:32,height:32,borderRadius:'50%',border:'1.5px solid #d1d5db',
+            background:'#f9f9f9',fontSize:18,cursor:'pointer',display:'flex',
+            alignItems:'center',justifyContent:'center',color:'#374151'}}>−</button>
+        <input type="number" inputMode="numeric" value={acc[fieldKey]||0}
+          onChange={e=>updAcc(fieldKey, e.target.value)}
+          style={{width:48,textAlign:'center',fontSize:17,fontWeight:700,
+            border:'1.5px solid #e5e5ea',borderRadius:8,padding:'4px',
+            color:'#1c1c1e',background:'#fff',outline:'none'}} />
+        <button onClick={()=>updAcc(fieldKey, (acc[fieldKey]||0)+1)}
+          style={{width:32,height:32,borderRadius:'50%',border:'none',
+            background:'#007aff',fontSize:18,cursor:'pointer',display:'flex',
+            alignItems:'center',justifyContent:'center',color:'#fff'}}>+</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{padding:16,display:'flex',flexDirection:'column',paddingBottom:80}}>
+      <div style={{marginBottom:16}}>
+        <h2 style={{margin:0,fontSize:24,fontWeight:700,color:'#1c1c1e'}}>Accessories</h2>
+        <p style={{margin:'4px 0 0',fontSize:14,color:'#8e8e93'}}>Count each item on the roof.</p>
+      </div>
+
+      <div style={{background:'#fff',border:'1.5px solid #e5e5ea',borderRadius:16,padding:'0 16px'}}>
+        <Section title="Lead Pipe Boots" />
+        <CountField label='2.5"' fieldKey="leadBoot25" />
+        <CountField label='3.5"' fieldKey="leadBoot35" />
+        <CountField label='4"' fieldKey="leadBoot4" />
+        <CountField label="Service Boot" fieldKey="leadBootService" />
+
+        <Section title="Goose Necks" />
+        <CountField label='4"' fieldKey="gooseNeck4" />
+        <CountField label='10"' fieldKey="gooseNeck10" />
+
+        <Section title="Off-Ridge Vents" />
+        <CountField label="4 ft" fieldKey="offRidge4" />
+        <CountField label="6 ft" fieldKey="offRidge6" />
+        <CountField label="8 ft" fieldKey="offRidge8" />
+        <CountField label="10 ft" fieldKey="offRidge10" />
+
+        <Section title="Other" />
+        <CountField label="Universal Pipe Boot" fieldKey="universalBoot" />
+        <CountField label="Service Boot" fieldKey="serviceBoot" />
+      </div>
+
+      <div style={{marginTop:20}}>
+        <Btn onClick={onNext}>Next: Review & Sign →</Btn>
+      </div>
+    </div>
+  );
+};
+
 // ─── SAVED JOB VIEW ──────────────────────────────────────────────────────────
 const SavedJobView = ({ job, company, contract, onBack }) => {
   const [view, setView] = useState(null);
@@ -1110,6 +1218,28 @@ export default function App() {
   const [tab, setTab] = useState('jobs');
   const [step, setStep] = useState(1);
   const [jobs, setJobs] = useState(() => load('jobs', []));
+  const [jobsLoading, setJobsLoading] = useState(false);
+
+  // Fetch central jobs on mount and when switching to jobs tab
+  const fetchCentralJobs = async () => {
+    setJobsLoading(true);
+    try {
+      const res = await fetch('/api/get-quotes');
+      if(res.ok){
+        const { quotes } = await res.json();
+        if(quotes && quotes.length > 0){
+          setJobs(quotes);
+          save('jobs', quotes);
+        }
+      }
+    } catch(err) {
+      console.warn('Could not fetch central jobs:', err);
+    } finally {
+      setJobsLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchCentralJobs(); }, []);
   const [company, setCompany] = useState(() => load('company', COMPANY_DEFAULTS));
   const [contract, setContract] = useState(() => load('contract', DEFAULT_CONTRACT));
   const [completedJob, setCompletedJob] = useState(null);
@@ -1117,23 +1247,48 @@ export default function App() {
 
   const blankJob = () => ({
     jobType:'replacement', clientName:'', phone:'', clientEmail:'', address:'',
-    sqft:0, ridgeFt:0, eavesFt:0, stories:1, pitch:'medium', roofType:'asphalt',
+    sqft:0, stories:1, pitch:'medium', roofType:'asphalt',
+    shingleColor:'', dripEdgeColor:'Brown',
     damageIssues:[], photos:[], notes:'',
+    accessories:{
+      leadBoot25:0, leadBoot35:0, leadBoot4:0, leadBootService:0,
+      gooseNeck4:0, gooseNeck10:0,
+      offRidge4:0, offRidge6:0, offRidge8:0, offRidge10:0,
+      universalBoot:0, serviceBoot:0,
+    },
     pricePerSquare:0, laborAmount:0, finalTotal:0, signature:null,
   });
   const [job, setJob] = useState(blankJob);
   const upd = patch => setJob(prev=>({...prev,...patch}));
 
-  const finish = (sig) => {
-    const done = { ...job, signature:sig, id:`EST-${Math.floor(Math.random()*9000)+1000}`, date:new Date().toLocaleDateString(), status:'Signed' };
+  const finish = async (sig) => {
+    const done = { 
+      ...job, 
+      signature:sig, 
+      id:`EST-${Math.floor(Math.random()*9000)+1000}`, 
+      date:new Date().toLocaleDateString(), 
+      createdAt: new Date().toISOString(),
+      status:'Signed' 
+    };
     const updated = [done,...jobs];
     setJobs(updated); save('jobs', updated);
     setCompletedJob(done);
+    // Sync to central database in background
+    try {
+      await fetch('/api/save-quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(done),
+      });
+    } catch(err) {
+      console.warn('Could not sync to central database:', err);
+      // Not a blocker - quote is saved locally
+    }
   };
 
   const reset = () => { setJob(blankJob()); setStep(1); setCompletedJob(null); setTab('jobs'); };
 
-  const STEPS = ['Job Info','Property','Damage','Pricing','Sign'];
+  const STEPS = ['Job Info','Property','Damage','Pricing','Accessories','Sign'];
 
   return (
     <div style={{minHeight:'100vh',background:'#111',display:'flex',justifyContent:'center',alignItems:'center',padding:'0 0 0 0'}}>
@@ -1161,7 +1316,7 @@ export default function App() {
               </div>
             </div>
             {/* Right: Next (steps 1-4) or spacer (step 5) */}
-            {step<5
+            {step<6
               ? <button onClick={()=>setStep(s=>s+1)} style={{background:'none',border:'none',color:'#007aff',fontWeight:700,fontSize:16,cursor:'pointer',minWidth:60,textAlign:'right'}}>Next</button>
               : <div style={{minWidth:60}} />}
           </div>
@@ -1179,7 +1334,12 @@ export default function App() {
                   <h1 style={{margin:0,fontSize:30,fontWeight:700,color:'#1c1c1e'}}>Estimates</h1>
                   <p style={{margin:'2px 0 0',fontSize:14,color:'#8e8e93'}}>Arch Roofing & Repair</p>
                 </div>
-                <div style={{width:40,height:40,background:'#1c1c1e',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:14}}>AR</div>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <button onClick={fetchCentralJobs} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:'#007aff'}} title="Refresh">
+                    {jobsLoading ? '⏳' : '🔄'}
+                  </button>
+                  <div style={{width:40,height:40,background:'#1c1c1e',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:14}}>AR</div>
+                </div>
               </div>
               {jobs.length===0
                 ? <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:300,color:'#8e8e93',gap:12}}>
@@ -1210,7 +1370,8 @@ export default function App() {
               {step===2 && <Step2 data={job} upd={upd} onNext={()=>setStep(3)} />}
               {step===3 && <Step3 data={job} upd={upd} onNext={()=>setStep(4)} />}
               {step===4 && <Step4 data={job} upd={upd} onNext={()=>setStep(5)} />}
-              {step===5 && <Step5 data={job} upd={upd} onFinish={finish} company={company} contract={contract} />}
+              {step===5 && <Step5Accessories data={job} upd={upd} onNext={()=>setStep(6)} />}
+              {step===6 && <Step5 data={job} upd={upd} onFinish={finish} company={company} contract={contract} />}
             </>
           )}
           {tab==='new' && completedJob && (
