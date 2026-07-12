@@ -381,19 +381,20 @@ const SigPad = ({ onSave }) => {
     ctx.scale(dpr,dpr); ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#1c1c1e';
   }, []);
 
-  const getPos = (e, r) => {
-    if(e.touches) return [e.touches[0].clientX-r.left, e.touches[0].clientY-r.top];
-    return [e.offsetX, e.offsetY];
+  const getPos = (e) => {
+    const r = ref.current.getBoundingClientRect();
+    if(e.touches) return [e.touches[0].clientX - r.left, e.touches[0].clientY - r.top];
+    return [e.clientX - r.left, e.clientY - r.top];
   };
 
   const start = e => {
-    const r=ref.current.getBoundingClientRect(); const ctx=ref.current.getContext('2d');
-    const [x,y]=getPos(e,r); ctx.beginPath(); ctx.moveTo(x,y); setDrawing(true); e.preventDefault();
+    const ctx=ref.current.getContext('2d');
+    const [x,y]=getPos(e); ctx.beginPath(); ctx.moveTo(x,y); setDrawing(true); e.preventDefault();
   };
   const move = e => {
     if(!drawing) return; e.preventDefault();
-    const r=ref.current.getBoundingClientRect(); const ctx=ref.current.getContext('2d');
-    const [x,y]=getPos(e,r); ctx.lineTo(x,y); ctx.stroke(); setHasSig(true);
+    const ctx=ref.current.getContext('2d');
+    const [x,y]=getPos(e); ctx.lineTo(x,y); ctx.stroke(); setHasSig(true);
     onSave(ref.current.toDataURL());
   };
   const stop = () => setDrawing(false);
