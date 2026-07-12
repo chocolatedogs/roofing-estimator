@@ -992,7 +992,7 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
             { type:'spacer', h:8 },
             { type:'priceBox', total:fmt(job.finalTotal), deposit:fmt(deposit) },
             ...((job.photos||[]).length>0?[
-              {type:'newpage'},
+              {type:'spacer',h:10},
               {type:'sectionHeader',text:'Site Photos',color:[15,118,110]},
               {type:'photos',photos:job.photos}
             ]:[]),
