@@ -869,7 +869,7 @@ const InternalQuote = ({ job, company, onBack }) => {
               ] : [];
             })()),
             ...((job.photos||[]).length>0?[
-              {type:'newpage'},
+              {type:'spacer',h:10},
               {type:'sectionHeader',text:'Site Photos',color:[30,58,138]},
               {type:'photos',photos:job.photos}
             ]:[]),
