@@ -996,7 +996,6 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
               {type:'sectionHeader',text:'Site Photos',color:[15,118,110]},
               {type:'photos',photos:job.photos}
             ]:[]),
-            { type:'newpage' },
             { type:'sectionHeader', text:'Terms & Conditions', color:[15,118,110] },
             { type:'text', content:contract, size:8, color:[55,65,81] },
             { type:'spacer', h:8 },
