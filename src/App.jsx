@@ -552,7 +552,7 @@ const generatePDF = async (sections, filename) => {
       y += 34;
     }
     else if (sec.type === 'sectionHeader') {
-      checkPage(22); y += 4;
+      checkPage(40); y += 4;
       doc.setFontSize(9); doc.setFont('helvetica','bold');
       doc.setTextColor(...(sec.color||[30,58,138]));
       doc.text(sec.text.toUpperCase(), margin, y); y += 14;
@@ -625,6 +625,8 @@ const generatePDF = async (sections, filename) => {
     else if (sec.type === 'photos') {
       if(!sec.photos||sec.photos.length===0) return;
       const cols = 3; const imgW = (contentW-16)/cols; const imgH = imgW*0.75;
+      // If less than one row of photos fits, start on new page
+      if(y + imgH > pageH - margin){ doc.addPage(); y = margin; }
       let col = 0; let rowY = y;
       sec.photos.forEach(photo => {
         try {
@@ -867,6 +869,7 @@ const InternalQuote = ({ job, company, onBack }) => {
               ] : [];
             })()),
             ...((job.photos||[]).length>0?[
+              {type:'newpage'},
               {type:'sectionHeader',text:'Site Photos',color:[30,58,138]},
               {type:'photos',photos:job.photos}
             ]:[]),
@@ -989,6 +992,7 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
             { type:'spacer', h:8 },
             { type:'priceBox', total:fmt(job.finalTotal), deposit:fmt(deposit) },
             ...((job.photos||[]).length>0?[
+              {type:'newpage'},
               {type:'sectionHeader',text:'Site Photos',color:[15,118,110]},
               {type:'photos',photos:job.photos}
             ]:[]),
