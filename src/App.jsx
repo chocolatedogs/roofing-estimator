@@ -599,6 +599,16 @@ const generatePDF = (sections, filename) => {
     }
     else if (sec.type === 'spacer') { y += sec.h||10; }
     else if (sec.type === 'newpage') { doc.addPage(); y = margin; }
+    else if (sec.type === 'clientInfo') {
+      checkPage(80);
+      doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(28,28,30);
+      doc.text(sec.name||'', margin, y); y += 18;
+      doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(55,65,81);
+      if(sec.address){ doc.text(sec.address, margin, y); y += 14; }
+      if(sec.phone){ doc.text(sec.phone, margin, y); y += 14; }
+      if(sec.email){ doc.text(sec.email, margin, y); y += 14; }
+      y += 4;
+    }
     else if (sec.type === 'divider') {
       y += 6; doc.setDrawColor(...(sec.color||[229,229,234]));
       doc.setLineWidth(0.5); doc.line(margin, y, pageW-margin, y); y += 6;
@@ -917,10 +927,7 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
             { type:'logo', src:LOGO_B64, name:company.name, address:company.address, phone:company.phone, email:company.email, license:company.license, lineColor:[15,118,110] },
             { type:'badge', left:'PROPOSAL / ESTIMATE', right:job.date, color:[15,118,110] },
             { type:'sectionHeader', text:'Prepared For', color:[15,118,110] },
-            { type:'text', content:job.clientName, size:13, style:'bold' },
-            { type:'text', content:job.address, size:10 },
-            ...(job.phone?[{type:'text',content:job.phone,size:10}]:[]),
-            ...(job.clientEmail?[{type:'text',content:job.clientEmail,size:10}]:[]),
+            { type:'clientInfo', name:job.clientName, address:job.address, phone:job.phone, email:job.clientEmail },
             { type:'spacer', h:8 },
             { type:'sectionHeader', text:'Scope of Work — '+(job.jobType==='replacement'?'Roof Replacement':'Roof Repair'), color:[15,118,110] },
             { type:'text', content:boilerplate, size:9 },
