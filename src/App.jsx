@@ -991,11 +991,6 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
             { type:'text', content:boilerplate, size:9 },
             { type:'spacer', h:8 },
             { type:'priceBox', total:fmt(job.finalTotal), deposit:fmt(deposit) },
-            ...((job.photos||[]).length>0?[
-              {type:'newpage'},
-              {type:'sectionHeader',text:'Site Photos',color:[15,118,110]},
-              {type:'photos',photos:job.photos}
-            ]:[]),
             { type:'newpage' },
             { type:'sectionHeader', text:'Terms & Conditions', color:[15,118,110] },
             { type:'text', content:contract, size:8, color:[55,65,81] },
@@ -1003,6 +998,11 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
             { type:'acceptance' },
             ...(job.signature?[
               {type:'signature',src:job.signature,name:job.clientName,date:job.date,color:[15,118,110]}
+            ]:[]),
+            ...((job.photos||[]).length>0?[
+              {type:'newpage'},
+              {type:'sectionHeader',text:'Site Photos',color:[15,118,110]},
+              {type:'photos',photos:job.photos}
             ]:[]),
           ], fname);
         }} color='#0f766e'>📄 Generate PDF — Client Copy</Btn>
