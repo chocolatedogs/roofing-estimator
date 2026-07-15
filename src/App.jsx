@@ -65,10 +65,6 @@ ROOF/METAL PORTION:
 1. Tear off existing roofing materials and underlayment down to original sheathing/decking.
 2. Install [GAUGE] [TYPE] Metal Roofing System per Manufacturer's Specifications.
 3. Installation includes all underlayment, metals, and flashing metal.
-4. Remove & replace any damaged/rotted sheathing & fascia board as needed. Any replacement of sheathing is $90/sheet & fascia board is $6/Linear Foot. Woodwork cost is in addition to the cost of the proposal as given below.
-5. Re-nail deck sheathing to meet current Building Codes.
-6. Install all new boots to plumbing vents, heating vents, roof vents, & electrical service inlets.
-7. Install all new standard galvanized/aluminum drip edge in standard manufacturer's colors (brown or white).
 
 ENTIRE JOB SITE:
 1. Remove all job-related debris from job site, including the use of a magnetic tool/roller around the perimeter to pick up loose nails or metal debris. We will pick up loose nails or metal debris to the fullest extent possible, but we cannot guarantee 100% removal.
