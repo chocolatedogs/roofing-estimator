@@ -59,6 +59,94 @@ ENTIRE JOB SITE:
 2. All material is guaranteed to be as specified.
 3. All work to be completed per current Building Codes.`;
 
+const METAL_BOILERPLATE = `WORK DESCRIPTION AND SPECIFICATIONS
+
+ROOF/METAL PORTION:
+1. Tear off existing roofing materials and underlayment down to original sheathing/decking.
+2. Install [GAUGE] [TYPE] Metal Roofing System per Manufacturer's Specifications.
+3. Installation includes all underlayment, metals, and flashing metal.
+4. Remove & replace any damaged/rotted sheathing & fascia board as needed. Any replacement of sheathing is $90/sheet & fascia board is $6/Linear Foot. Woodwork cost is in addition to the cost of the proposal as given below.
+5. Re-nail deck sheathing to meet current Building Codes.
+6. Install all new boots to plumbing vents, heating vents, roof vents, & electrical service inlets.
+7. Install all new standard galvanized/aluminum drip edge in standard manufacturer's colors (brown or white).
+
+ENTIRE JOB SITE:
+1. Remove all job-related debris from job site, including the use of a magnetic tool/roller around the perimeter to pick up loose nails or metal debris. We will pick up loose nails or metal debris to the fullest extent possible, but we cannot guarantee 100% removal.
+2. All material is guaranteed to be as specified.
+3. All work to be completed per current Building Codes.
+4. All work will be independently inspected and approved by City/County Building Departments both during and after roof completion as required by law.
+
+PRICE INCLUDES:
+• Obtaining all applicable Permits & related documentation.
+• All Dumpster and Debris Removal Fees.
+• Labor, materials, and clean-up.
+• 15-year Workmanship Warranty
+• Wind Mitigation Inspection and Report by Independent 3rd Party.
+
+Final price is + Cost of any additional woodwork per above price schedule.`;
+
+const TILE_BOILERPLATE = `WORK DESCRIPTION AND SPECIFICATIONS
+
+ROOF/TILE PORTION:
+1. Tear off existing tile roof system and underlayment down to original sheathing/decking on roof.
+2. Remove & replace any damaged/rotted sheathing & fascia board as needed. Any replacement of sheathing is $90/sheet & fascia board is $6/Linear Foot. Woodwork cost is in addition to the cost of the proposal as given below.
+3. Re-nail deck sheathing to meet current Building Codes.
+4. Dry-In with High Temperature peel & stick underlayment.
+5. Install all new pipe boots.
+6. Install all new galvanized/aluminum drip edge metal.
+7. Install all new flashing and transition metal.
+8. Install complete concrete tile roofing system.
+
+ENTIRE JOB SITE:
+1. Remove all job-related debris from job site, including the use of a magnetic tool/roller around the perimeter to pick up loose nails or metal debris. We will pick up loose nails or metal debris to the fullest extent possible, but we cannot guarantee 100% removal.
+2. All material is guaranteed to be as specified.
+3. All work to be completed per current Building Codes.
+4. All work will be independently inspected and approved by City/County Building Departments both during and after roof completion as required by law.
+
+PRICE INCLUDES:
+• Obtaining all applicable Permits & related documentation.
+• All Dumpster and Debris Removal Fees.
+• Labor, materials, and clean-up.
+• 15-year Workmanship Warranty
+• Wind Mitigation Inspection and Report by Independent 3rd Party.
+
+Final price is + Cost of any additional woodwork per above price schedule.`;
+
+const FLAT_BOILERPLATE = `WORK DESCRIPTION AND SPECIFICATIONS
+
+ROOF/FLAT PORTION:
+1. Install TPO roofing system per manufacturer's specifications.
+2. Remove & replace any damaged/rotted sheathing & fascia board as needed. Any replacement of sheathing is $90/sheet & fascia board is $6/Linear Foot. Woodwork cost is in addition to the cost of the proposal as given below.
+3. Re-nail deck sheathing to meet current Building Codes.
+4. Install all new boots to plumbing vents, heating vents, roof vents, & electrical service inlets.
+5. Install all new standard galvanized/aluminum drip edge in standard manufacturer's colors (brown or white).
+6. Install all new flashing and transition metal.
+
+ENTIRE JOB SITE:
+1. Remove all job-related debris from job site, including the use of a magnetic tool/roller around the perimeter to pick up loose nails or metal debris. We will pick up loose nails or metal debris to the fullest extent possible, but we cannot guarantee 100% removal.
+2. All material is guaranteed to be as specified.
+3. All work to be completed per current Building Codes.
+4. All work will be independently inspected and approved by City/County Building Departments both during and after roof completion as required by law.
+
+PRICE INCLUDES:
+• Obtaining all applicable Permits & related documentation.
+• All Dumpster and Debris Removal Fees.
+• Labor, materials, and clean-up.
+• 15-year Workmanship Warranty
+• Wind Mitigation Inspection and Report by Independent 3rd Party.
+
+Final price is + Cost of any additional woodwork per above price schedule.`;
+
+const BOILERPLATE_BY_ROOF = (roofType, jobType) => {
+  if(jobType === 'repair') return REPAIR_BOILERPLATE;
+  switch(roofType) {
+    case 'metal': return METAL_BOILERPLATE;
+    case 'tile':  return TILE_BOILERPLATE;
+    case 'flat':  return FLAT_BOILERPLATE;
+    default:      return REPLACEMENT_BOILERPLATE;
+  }
+};
+
 const DEFAULT_CONTRACT = `TERMS & CONDITIONS
 
 ARCH ROOFING & REPAIR, LLC CONTRACT WITH OWNER:
@@ -243,6 +331,27 @@ const Step2 = ({ data, upd, onNext }) => {
         <Seg options={[{label:'Brown',value:'Brown'},{label:'White',value:'White'}]}
           selected={data.dripEdgeColor||'Brown'} onChange={v=>upd({dripEdgeColor:v})} />
       </div>
+
+      {/* Editable Scope of Work — auto-fills based on roof type, estimator can edit */}
+      {data.jobType==='replacement' && (
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <label style={{fontSize:11,fontWeight:700,color:'#8e8e93',textTransform:'uppercase',letterSpacing:.5}}>Scope of Work</label>
+            <button onClick={()=>upd({editableBoilerplate: BOILERPLATE_BY_ROOF(data.roofType, data.jobType)})}
+              style={{background:'none',border:'none',color:'#007aff',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+              Reset to Default
+            </button>
+          </div>
+          <textarea
+            value={data.editableBoilerplate || BOILERPLATE_BY_ROOF(data.roofType, data.jobType)}
+            onChange={e=>upd({editableBoilerplate:e.target.value})}
+            style={{background:'#f2f2f7',border:'1.5px solid #e5e5ea',borderRadius:12,padding:'12px 14px',
+              fontSize:12,color:'#1c1c1e',outline:'none',minHeight:160,resize:'vertical',
+              fontFamily:'inherit',lineHeight:1.6,width:'100%',boxSizing:'border-box'}}
+          />
+          <p style={{fontSize:11,color:'#8e8e93',margin:0}}>Edit the scope for this specific job. Tap "Reset to Default" to restore original text.</p>
+        </div>
+      )}
 
       {!data.sqft && <div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:12,padding:'10px 14px',display:'flex',gap:8,alignItems:'center'}}>
         <span style={{fontSize:16}}>⚠️</span>
@@ -886,7 +995,9 @@ const InternalQuote = ({ job, company, onBack }) => {
 // ─── QUOTE DOCUMENT — CLIENT ──────────────────────────────────────────────────
 const ClientQuote = ({ job, company, contract, onBack }) => {
   const deposit = Math.round(job.finalTotal*0.5);
-  const boilerplate = job.jobType==='replacement' ? REPLACEMENT_BOILERPLATE : REPAIR_BOILERPLATE;
+  const boilerplate = job.jobType==='repair'
+    ? REPAIR_BOILERPLATE
+    : (job.editableBoilerplate || BOILERPLATE_BY_ROOF(job.roofType, job.jobType));
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -979,7 +1090,9 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
       <div className="no-print" style={{marginTop:16}}>
         <Btn onClick={()=>{
           const deposit = Math.round(job.finalTotal*0.5);
-          const boilerplate = job.jobType==='replacement' ? REPLACEMENT_BOILERPLATE : REPAIR_BOILERPLATE;
+          const boilerplate = job.jobType==='repair' 
+            ? REPAIR_BOILERPLATE 
+            : (job.editableBoilerplate || BOILERPLATE_BY_ROOF(job.roofType, job.jobType));
           const fname = 'Quote-'+job.clientName.replace(/ /g,'_')+'-'+job.date.replace(/\//g,'-');
           generatePDF([
             { type:'logo', src:LOGO_B64, name:company.name, address:company.address, phone:company.phone, email:company.email, license:company.license, lineColor:[15,118,110] },
@@ -1252,6 +1365,7 @@ export default function App() {
     jobType:'replacement', clientName:'', phone:'', clientEmail:'', address:'',
     sqft:0, stories:1, pitch:'medium', roofType:'asphalt',
     shingleColor:'', dripEdgeColor:'Brown',
+    editableBoilerplate:'',
     damageIssues:[], photos:[], notes:'',
     accessories:{
       leadBoot25:0, leadBoot35:0, leadBoot4:0, leadBootService:0,
