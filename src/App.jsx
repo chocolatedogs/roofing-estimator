@@ -974,6 +974,10 @@ const InternalQuote = ({ job, company, onBack }) => {
               {type:'sectionHeader',text:'Observed Issues',color:[30,58,138]},
               ...dmg.map(d=>({type:'text',content:'• '+d,size:10}))
             ]:[]),
+            ...(job.editableBoilerplate && job.roofType !== 'asphalt'?[
+              {type:'sectionHeader',text:'Scope of Work Notes',color:[30,58,138]},
+              {type:'text',content:job.editableBoilerplate,size:9}
+            ]:[]),
             ...(job.notes?[
               {type:'sectionHeader',text:'Inspector Notes',color:[30,58,138]},
               {type:'text',content:job.notes,size:10}
