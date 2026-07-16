@@ -1294,24 +1294,22 @@ const Step5Accessories = ({ data, upd, onNext }) => {
       <div style={{background:'#fff',border:'1.5px solid #e5e5ea',borderRadius:16,padding:'0 16px',marginTop:16}}>
         <Section title="Color Selections" />
 
-        {/* Shingle/Tile Color - only for asphalt and tile */}
-        {(data.roofType==='asphalt'||data.roofType==='tile') && (
-          <div style={{padding:'10px 0',borderBottom:'0.5px solid #f2f2f7'}}>
-            <div style={{fontSize:14,fontWeight:500,color:'#1c1c1e',marginBottom:8}}>
-              {data.roofType==='tile' ? 'Tile Color' : 'Shingle Color'}
-            </div>
-            <input type="text"
-              placeholder="e.g. Weathered Wood, Charcoal..."
-              value={data.shingleColor||''}
-              onChange={e=>upd({shingleColor:e.target.value})}
-              style={{background:'#f2f2f7',border:'1.5px solid #e5e5ea',borderRadius:10,
-                padding:'10px 12px',fontSize:15,color:'#1c1c1e',outline:'none',
-                width:'100%',boxSizing:'border-box'}} />
+        {/* Roof Color - always visible, label changes by roof type */}
+        <div style={{padding:'12px 0',borderBottom:'0.5px solid #f2f2f7'}}>
+          <div style={{fontSize:14,fontWeight:500,color:'#1c1c1e',marginBottom:8}}>
+            {data.roofType==='tile' ? 'Tile Color' : data.roofType==='asphalt' ? 'Shingle Color' : 'Roof Color'}
           </div>
-        )}
+          <input type="text"
+            placeholder="e.g. Weathered Wood, Charcoal..."
+            value={data.shingleColor||''}
+            onChange={e=>upd({shingleColor:e.target.value})}
+            style={{background:'#f2f2f7',border:'1.5px solid #e5e5ea',borderRadius:10,
+              padding:'10px 12px',fontSize:15,color:'#1c1c1e',outline:'none',
+              width:'100%',boxSizing:'border-box'}} />
+        </div>
 
-        {/* Drip Edge Color - only for asphalt and tile */}
-        {(data.roofType==='asphalt'||data.roofType==='tile') && (
+        {/* Drip Edge Color - only for asphalt shingle */}
+        {data.roofType==='asphalt' && (
           <div style={{padding:'12px 0'}}>
             <div style={{fontSize:14,fontWeight:500,color:'#1c1c1e',marginBottom:8}}>Drip Edge Color</div>
             <Seg options={[{label:'Brown',value:'Brown'},{label:'White',value:'White'}]}
