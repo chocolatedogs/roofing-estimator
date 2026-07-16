@@ -177,7 +177,7 @@ NOTE: If payment in full is not received in our office within seven (7) calendar
 
 const ROOF_TYPES = [
   { id: 'asphalt', label: 'Asphalt Shingle', icon: '🏠' },
-  { id: 'metal',   label: 'Metal (Standing Seam)', icon: '🔩' },
+  { id: 'metal',   label: 'Metal', icon: '🔩' },
   { id: 'tile',    label: 'Clay/Concrete Tile', icon: '🧱' },
   { id: 'flat',    label: 'Flat / Membrane', icon: '▭' },
 ];
@@ -316,24 +316,6 @@ const Step2 = ({ data, upd, onNext }) => {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Shingle Color */}
-      {(data.roofType==='asphalt'||data.roofType==='tile') && (
-        <div style={{display:'flex',flexDirection:'column',gap:6}}>
-          <label style={{fontSize:11,fontWeight:700,color:'#8e8e93',textTransform:'uppercase',letterSpacing:.5}}>Shingle / Tile Color</label>
-          <input type="text" placeholder="e.g. Weathered Wood, Charcoal..."
-            value={data.shingleColor||''}
-            onChange={e=>upd({shingleColor:e.target.value})}
-            style={{background:'#f2f2f7',border:'1.5px solid #e5e5ea',borderRadius:12,padding:'12px 14px',fontSize:16,color:'#1c1c1e',outline:'none',width:'100%',boxSizing:'border-box'}} />
-        </div>
-      )}
-
-      {/* Drip Edge Color */}
-      <div style={{display:'flex',flexDirection:'column',gap:6}}>
-        <label style={{fontSize:11,fontWeight:700,color:'#8e8e93',textTransform:'uppercase',letterSpacing:.5}}>Drip Edge Color</label>
-        <Seg options={[{label:'Brown',value:'Brown'},{label:'White',value:'White'}]}
-          selected={data.dripEdgeColor||'Brown'} onChange={v=>upd({dripEdgeColor:v})} />
       </div>
 
       {/* Editable Scope of Work — auto-fills based on roof type, estimator can edit */}
@@ -1306,6 +1288,36 @@ const Step5Accessories = ({ data, upd, onNext }) => {
         <Section title="Other" />
         <CountField label="Universal Pipe Boot" fieldKey="universalBoot" />
         <CountField label="Service Boot" fieldKey="serviceBoot" />
+      </div>
+
+      {/* Color selections */}
+      <div style={{background:'#fff',border:'1.5px solid #e5e5ea',borderRadius:16,padding:'0 16px',marginTop:16}}>
+        <Section title="Color Selections" />
+
+        {/* Shingle/Tile Color - only for asphalt and tile */}
+        {(data.roofType==='asphalt'||data.roofType==='tile') && (
+          <div style={{padding:'10px 0',borderBottom:'0.5px solid #f2f2f7'}}>
+            <div style={{fontSize:14,fontWeight:500,color:'#1c1c1e',marginBottom:8}}>
+              {data.roofType==='tile' ? 'Tile Color' : 'Shingle Color'}
+            </div>
+            <input type="text"
+              placeholder="e.g. Weathered Wood, Charcoal..."
+              value={data.shingleColor||''}
+              onChange={e=>upd({shingleColor:e.target.value})}
+              style={{background:'#f2f2f7',border:'1.5px solid #e5e5ea',borderRadius:10,
+                padding:'10px 12px',fontSize:15,color:'#1c1c1e',outline:'none',
+                width:'100%',boxSizing:'border-box'}} />
+          </div>
+        )}
+
+        {/* Drip Edge Color - only for asphalt and tile */}
+        {(data.roofType==='asphalt'||data.roofType==='tile') && (
+          <div style={{padding:'12px 0'}}>
+            <div style={{fontSize:14,fontWeight:500,color:'#1c1c1e',marginBottom:8}}>Drip Edge Color</div>
+            <Seg options={[{label:'Brown',value:'Brown'},{label:'White',value:'White'}]}
+              selected={data.dripEdgeColor||'Brown'} onChange={v=>upd({dripEdgeColor:v})} />
+          </div>
+        )}
       </div>
 
       <div style={{marginTop:20}}>
