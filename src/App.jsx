@@ -1388,7 +1388,9 @@ export default function App() {
       id:`EST-${Math.floor(Math.random()*9000)+1000}`, 
       date:new Date().toLocaleDateString(), 
       createdAt: new Date().toISOString(),
-      status:'Signed' 
+      status:'Signed',
+      // Always explicitly save the boilerplate so it's correct when reopened
+      editableBoilerplate: job.editableBoilerplate || BOILERPLATE_BY_ROOF(job.roofType, job.jobType),
     };
     const updated = [done,...jobs];
     setJobs(updated); save('jobs', updated);
