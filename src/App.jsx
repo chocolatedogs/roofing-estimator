@@ -63,8 +63,9 @@ const METAL_BOILERPLATE = `WORK DESCRIPTION AND SPECIFICATIONS
 
 ROOF/METAL PORTION:
 1. Tear off existing roofing materials and underlayment down to original sheathing/decking.
-2. Install [GAUGE] [TYPE] Metal Roofing System per Manufacturer's Specifications.
-3. Installation includes all underlayment, metals, and flashing metal.
+2. Remove & replace any damaged/rotted sheathing & fascia board as needed. Any replacement of sheathing is $90/sheet & fascia board is $6/Linear Foot. Woodwork cost is in addition to the cost of the proposal as given below.
+3. Re-nail deck sheathing to meet current Building Codes.
+4. Install [GAUGE] [TYPE] Metal Roofing System per Manufacturer's Specifications. Installation includes all underlayment, metals, and flashing metal.
 
 ENTIRE JOB SITE:
 1. Remove all job-related debris from job site, including the use of a magnetic tool/roller around the perimeter to pick up loose nails or metal debris. We will pick up loose nails or metal debris to the fullest extent possible, but we cannot guarantee 100% removal.
@@ -734,6 +735,24 @@ const generatePDF = async (sections, filename) => {
       y += 6; doc.setDrawColor(...(sec.color||[229,229,234]));
       doc.setLineWidth(0.5); doc.line(margin, y, pageW-margin, y); y += 6;
     }
+    else if (sec.type === 'photosWithHeader') {
+      if(!sec.photos||sec.photos.length===0) return;
+      const cols = 3; const imgW = (contentW-16)/cols; const imgH = imgW*0.75;
+      // Check if header + at least one row fits — if not, new page
+      if(y + 30 + imgH > pageH - margin){ doc.addPage(); y = margin; }
+      doc.setFontSize(9); doc.setFont('helvetica','bold');
+      doc.setTextColor(...(sec.color||[30,58,138]));
+      doc.text('SITE PHOTOS', margin, y); y += 14;
+      let col = 0; let rowY = y;
+      sec.photos.forEach(photo => {
+        try {
+          if(rowY + imgH > pageH-margin){ doc.addPage(); rowY = margin; col = 0; }
+          doc.addImage(photo, 'JPEG', margin + col*(imgW+8), rowY, imgW, imgH);
+          col++; if(col>=cols){ col=0; rowY += imgH+8; }
+        } catch(e){}
+      });
+      y = rowY + (col>0 ? imgH+8 : 0) + 8;
+    }
     else if (sec.type === 'photos') {
       if(!sec.photos||sec.photos.length===0) return;
       const cols = 3; const imgW = (contentW-16)/cols; const imgH = imgW*0.75;
@@ -981,9 +1000,7 @@ const InternalQuote = ({ job, company, onBack }) => {
               ] : [];
             })()),
             ...((job.photos||[]).length>0?[
-              {type:'spacer',h:10},
-              {type:'sectionHeader',text:'Site Photos',color:[30,58,138]},
-              {type:'photos',photos:job.photos}
+              {type:'photosWithHeader',photos:job.photos,color:[30,58,138]}
             ]:[]),
             ...(job.signature?[
               {type:'signature',src:job.signature,name:job.clientName,date:job.date,color:[30,58,138]}
@@ -1108,9 +1125,7 @@ const ClientQuote = ({ job, company, contract, onBack }) => {
             { type:'spacer', h:8 },
             { type:'priceBox', total:fmt(job.finalTotal), deposit:fmt(deposit) },
             ...((job.photos||[]).length>0?[
-              {type:'spacer',h:10},
-              {type:'sectionHeader',text:'Site Photos',color:[15,118,110]},
-              {type:'photos',photos:job.photos}
+              {type:'photosWithHeader',photos:job.photos,color:[15,118,110]}
             ]:[]),
             { type:'sectionHeader', text:'Terms & Conditions', color:[15,118,110] },
             { type:'text', content:contract, size:8, color:[55,65,81] },
