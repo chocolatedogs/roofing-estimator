@@ -190,6 +190,13 @@ const DAMAGE_ISSUES = [
 ];
 const fmt = (n) => '$' + Math.round(n).toLocaleString('en-US');
 
+const fmtPhone = (val) => {
+  const digits = val.replace(/\D/g, '').slice(0, 10);
+  if(digits.length <= 3) return digits;
+  if(digits.length <= 6) return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+};
+
 // ─── LOCAL STORAGE HELPERS ────────────────────────────────────────────────────
 const load = (key, fallback) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } };
 const save = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} };
@@ -234,7 +241,7 @@ const Step1 = ({ data, upd, onNext }) => {
       {[['clientName','Client Name *','John Doe','text'],['phone','Phone','(555) 123-4567','tel'],['clientEmail','Client Email','john@email.com','email']].map(([k,lbl,ph,type])=>(
         <div key={k} style={{display:'flex',flexDirection:'column',gap:4}}>
           <label style={{fontSize:11,fontWeight:700,color:'#8e8e93',textTransform:'uppercase',letterSpacing:.5}}>{lbl}</label>
-          <input type={type} placeholder={ph} value={data[k]} onChange={e=>upd({[k]:e.target.value})}
+          <input type={type} placeholder={ph} value={data[k]} onChange={e=>upd({[k]: k==='phone' ? fmtPhone(e.target.value) : e.target.value})}
             style={{width:'100%',boxSizing:'border-box',background:'#f2f2f7',border:'1.5px solid #e5e5ea',borderRadius:12,padding:'12px 14px',fontSize:17,color:'#1c1c1e',outline:'none'}} />
         </div>
       ))}
@@ -935,7 +942,7 @@ const InternalQuote = ({ job, company, onBack }) => {
             { type:'row2', label:'Stories:', value:String(job.stories) },
             { type:'row2', label:'Pitch:', value:job.pitch },
             ...(job.shingleColor?[{type:'row2',label:'Shingle/Tile Color:',value:job.shingleColor}]:[]),
-            { type:'row2', label:'Drip Edge Color:', value:job.dripEdgeColor||'Brown' },
+            ...((job.roofType==='asphalt'||job.roofType==='tile')?[{type:'row2',label:'Drip Edge Color:',value:job.dripEdgeColor||'Brown'}]:[]),
             { type:'sectionHeader', text:'Pricing Breakdown', color:[30,58,138] },
             { type:'row2', label:'Price Per Square:', value:fmt(job.pricePerSquare||0) },
             { type:'row2', label:'Number of Squares:', value:'× '+squares },
